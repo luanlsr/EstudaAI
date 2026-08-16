@@ -874,7 +874,25 @@
             } catch(e) { alert('Erro ao salvar.'); btn.disabled = false; btn.textContent = 'Salvar e Entrar'; }
         }
 
+        const insigniaMap = {
+            "Sd PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-sd2.png",
+            "Cb PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-cabo2.png",
+            "3º Sgt PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-3-sgt2.png",
+            "2º Sgt PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-2-sgt2.png",
+            "1º Sgt PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-1-sgt2.png",
+            "Subten PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-sub2.png",
+            "Cadete PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/cadete-1.png",
+            "Asp Of PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-asp2.png",
+            "2º Ten PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-2-ten2.png",
+            "1º Ten PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-1-ten2.png",
+            "Cap PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-cap2.png",
+            "Maj PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-major2.png",
+            "Ten Cel PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-ten-cel2.png",
+            "Cel PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-cel2.png"
+        };
+
         function getInsigniaUrl(rank) {
+            if (insigniaMap[rank]) return insigniaMap[rank];
             return `https://ui-avatars.com/api/?name=${encodeURIComponent(rank)}&background=0f172a&color=fff&bold=true`;
         }
 
