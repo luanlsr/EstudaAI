@@ -21,6 +21,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
     <style>
         :root {
             --bg-body: #f8fafc;
@@ -1064,6 +1066,9 @@
                     document.getElementById('userName').textContent = displayName;
                     document.getElementById('appHeader').style.display = 'flex';
                     switchTab('chat');
+                    
+                    // Inicia Onboarding se for a primeira vez
+                    startOnboarding();
                 } else {
                     document.getElementById('loginScreen').style.display = 'flex';
                 }
@@ -1072,6 +1077,33 @@
             }
         }
         checkAuth();
+
+        // --- ONBOARDING TOUR ---
+        function startOnboarding() {
+            if (localStorage.getItem('estudaai_onboarding_done')) return;
+            
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                nextBtnText: 'Próximo →',
+                prevBtnText: '← Anterior',
+                doneBtnText: 'Entendi!',
+                steps: [
+                    { element: '.nav-tabs .tab:nth-child(1)', popover: { title: 'Tutor de IA 🤖', description: 'Tire suas dúvidas jurídicas e operacionais diretamente com o Capitão Instrução.', side: "top", align: 'center' } },
+                    { element: '.nav-tabs .tab:nth-child(2)', popover: { title: 'Gerador de Simulados 📝', description: 'Crie provas personalizadas escolhendo o número de questões e os assuntos exatos do edital.', side: "top", align: 'center' } },
+                    { element: '.nav-tabs .tab:nth-child(3)', popover: { title: 'Ranking Global 🏆', description: 'Veja sua pontuação, responda aos simulados e compita com outros policiais!', side: "top", align: 'center' } },
+                    { element: '.header-controls', popover: { title: 'Sua Conta 👤', description: 'Aqui você acompanha seu perfil e pode sair da sua conta quando terminar os estudos.', side: "bottom", align: 'end' } }
+                ],
+                onDestroyStarted: () => {
+                    localStorage.setItem('estudaai_onboarding_done', 'true');
+                    driverObj.destroy();
+                }
+            });
+            
+            setTimeout(() => {
+                driverObj.drive();
+            }, 800);
+        }
 
         // --- TABS ---
         function switchTab(tabName, clickedElement = null) {
