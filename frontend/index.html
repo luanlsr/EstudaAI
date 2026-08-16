@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EstudaAI - Simulados CEFS PMERJ</title>
     
     <!-- Meta Tags para Compartilhamento (Open Graph) -->
@@ -54,7 +54,6 @@
             height: 100vh;
             overflow: hidden;
             line-height: 1.6;
-            overscroll-behavior-y: none; /* Prevent iOS bounce */
         }
 
         /* Top Navigation / Header */
@@ -584,18 +583,14 @@
             to { opacity: 1; transform: translateY(0); }
         }
         /* Responsive Mobile First */
-        /* Responsive Mobile First */
+        /* Minimal Responsive Mobile Fixes */
         @media (max-width: 768px) {
-            ::-webkit-scrollbar { display: none; }
-            * { scrollbar-width: none; }
-            
             .header {
-                padding: max(12px, env(safe-area-inset-top)) 16px 12px 16px;
-                height: auto;
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(10px);
+                padding: 12px 16px;
             }
-            .header-logo span { display: none; }
+            .header-logo span {
+                display: none;
+            }
             .user-profile span {
                 font-size: 0.85rem;
                 max-width: 140px;
@@ -603,90 +598,34 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+            
             .nav-tabs {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: calc(64px + env(safe-area-inset-bottom));
-                padding-bottom: env(safe-area-inset-bottom);
-                background: rgba(255, 255, 255, 0.9);
-                backdrop-filter: blur(15px);
-                margin: 0;
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-                border-top: 1px solid rgba(0,0,0,0.08);
-                z-index: 100;
+                margin-left: 16px;
             }
             .tab {
-                flex-direction: column;
-                padding: 8px 4px;
-                font-size: 0.7rem;
-                border-bottom: none !important;
-                gap: 4px;
-                flex: 1;
-                justify-content: center;
-                border-top: 2px solid transparent;
+                padding: 12px 8px;
+                font-size: 0.85rem;
             }
-            .tab.active {
-                color: var(--accent-color);
-                border-top-color: var(--accent-color);
-            }
-            .tab svg { width: 22px; height: 22px; }
+            .tab svg { width: 16px; height: 16px; }
             
-            .view-section {
-                padding-bottom: calc(64px + env(safe-area-inset-bottom));
-            }
-            
-            .chat-container {
-                padding: 16px 12px;
-                gap: 20px;
-            }
-            
-            .quiz-container {
-                padding: 16px 12px;
+            .chat-container, .quiz-container {
+                padding: 16px 16px;
             }
             
             .input-wrapper {
-                padding: 12px;
-                background: rgba(255,255,255,0.85);
-                backdrop-filter: blur(10px);
-                border-top: 1px solid rgba(0,0,0,0.05);
-            }
-            
-            .input-container {
-                border-radius: 24px;
-                padding: 8px 16px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            }
-            
-            #query {
-                font-size: 1rem; /* Prevent iOS zoom */
+                padding: 12px 16px;
             }
             
             .radio-grid { grid-template-columns: 1fr; }
             .checkbox-grid { grid-template-columns: 1fr; }
             
             .login-box, .onboarding-box {
-                padding: 24px 20px;
+                padding: 24px;
                 width: 95%;
-                border-radius: 24px;
             }
             
             .message-row.bot .message, .message-row.user .message {
-                max-width: 92%;
-                padding: 14px 16px;
-                font-size: 0.95rem;
-                border-radius: 18px;
-            }
-            
-            .ranking-list li {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 12px;
-                padding: 16px;
-                border-radius: 16px;
+                max-width: 95%;
             }
         }
     </style>
