@@ -138,7 +138,7 @@ FRAGMENTOS DA APOSTILA:
 {context}
 """
     
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_structured_output(QuizResponse)
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3).with_structured_output(QuizResponse)
     response = await llm.ainvoke([HumanMessage(content=prompt)])
     
     return response
@@ -152,13 +152,13 @@ from infrastructure.database.models import UserScore
 @app.post("/api/score")
 async def add_score(req: ScorePayload, db_session: AsyncSession = Depends(get_db_session), user: dict = Depends(get_current_user)):
     """Atualiza a pontuação do usuário e registra o jogo."""
-    query = select(UserScore).where(UserScore.user_email == user["email"])
+    query = select(UserScore).where(UserScore.user_email == user["sub"])
     result = await db_session.execute(query)
     user_score = result.scalars().first()
     
     if not user_score:
         user_score = UserScore(
-            user_email=user["email"],
+            user_email=user["sub"],
             user_name=user.get("name", "Aluno"),
             user_picture=user.get("picture", ""),
             score=req.points,

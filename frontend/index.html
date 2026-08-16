@@ -845,8 +845,10 @@
             document.getElementById('quizProgressTitle').textContent = `Questão ${currentQuestionIndex + 1} de ${currentQuizData.length}`;
             
             let optionsHtml = '';
+            const letters = ['A', 'B', 'C', 'D'];
             q.options.forEach((opt, idx) => {
-                optionsHtml += `<button class="trivia-option" onclick="answerQuestion(${idx})">${opt}</button>`;
+                const prefix = letters[idx] ? letters[idx] + ') ' : '';
+                optionsHtml += `<button class="trivia-option" onclick="answerQuestion(${idx})"><strong>${prefix}</strong> ${opt}</button>`;
             });
 
             quizContent.innerHTML = `
