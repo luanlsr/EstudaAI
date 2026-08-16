@@ -30,8 +30,8 @@ async def get_db_session():
         yield session
 
 from fastapi.middleware.cors import CORSMiddleware
-from infrastructure.database.models import Base
-from sqlalchemy import text
+from infrastructure.database.models import Base, UserScore
+from sqlalchemy import text, select
 
 app = FastAPI(title="Knowledge Platform API", version="1.0")
 
@@ -74,22 +74,27 @@ class LoginPayload(BaseModel):
 
 @app.post("/api/auth/register")
 async def register_user(payload: RegisterPayload, db_session: AsyncSession = Depends(get_db_session)):
-    query = select(UserScore).where(UserScore.user_email == payload.email)
-    result = await db_session.execute(query)
-    if result.scalars().first():
-        raise HTTPException(status_code=400, detail="Email já cadastrado.")
-        
-    hashed = pwd_context.hash(payload.password)
-    new_user = UserScore(
-        user_email=payload.email,
-        user_name=payload.name,
-        password_hash=hashed,
-        score=0,
-        games_played=0
-    )
-    db_session.add(new_user)
-    await db_session.commit()
-    return {"message": "Conta criada com sucesso!"}
+    try:
+        query = select(UserScore).where(UserScore.user_email == payload.email)
+        result = await db_session.execute(query)
+        if result.scalars().first():
+            raise HTTPException(status_code=400, detail="Email já cadastrado.")
+            
+        hashed = pwd_context.hash(payload.password)
+        new_user = UserScore(
+            user_email=payload.email,
+            user_name=payload.name,
+            password_hash=hashed,
+            score=0,
+            games_played=0
+        )
+        db_session.add(new_user)
+        await db_session.commit()
+        return {"message": "Conta criada com sucesso!"}
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}\n{error_details}")
 
 @app.post("/api/auth/login")
 async def login_user(payload: LoginPayload, response: Response, db_session: AsyncSession = Depends(get_db_session)):
@@ -220,8 +225,7 @@ FRAGMENTOS DA APOSTILA:
 class ScorePayload(BaseModel):
     points: int
 
-from sqlalchemy import select
-from infrastructure.database.models import UserScore
+
 
 @app.post("/api/score")
 async def add_score(req: ScorePayload, db_session: AsyncSession = Depends(get_db_session), user: dict = Depends(get_current_user)):
