@@ -411,6 +411,94 @@
             font-style: italic;
         }
 
+        /* Trivia Quiz Styles */
+        .trivia-question {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+
+        .trivia-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .trivia-option {
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+            text-align: left;
+        }
+
+        .trivia-option:hover:not(:disabled) {
+            background: var(--bg-body);
+            border-color: var(--text-muted);
+        }
+
+        .trivia-option.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+
+        .trivia-option.wrong {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        
+        .trivia-option:disabled {
+            cursor: default;
+        }
+
+        .trivia-justification {
+            background: #eff6ff;
+            border-left: 4px solid var(--accent-color);
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 24px;
+            display: none;
+            font-size: 0.9375rem;
+        }
+
+        .trivia-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .ranking-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+            margin-top: 32px;
+            display: none;
+        }
+
+        .ranking-list {
+            list-style: none;
+            margin-top: 16px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .ranking-item:last-child { border-bottom: none; }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
@@ -526,9 +614,22 @@
             </div>
 
             <div class="quiz-result-area" id="quizResultArea">
-                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Seu Simulado</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <h2 id="quizProgressTitle">Seu Simulado</h2>
+                    <span id="quizScoreDisplay" style="font-weight: 600; color: var(--accent-color);">Pontos: 0</span>
+                </div>
                 <div class="typing-indicator" id="typingQuiz" style="margin-bottom: 20px;">Analisando os PDFs e criando questões inéditas...</div>
-                <div class="markdown-body" id="quizContent"></div>
+                
+                <div id="quizContent">
+                    <!-- Trivia UI goes here -->
+                </div>
+            </div>
+
+            <div class="ranking-card" id="rankingArea">
+                <h2>🏆 Ranking Global do CEFS</h2>
+                <ul class="ranking-list" id="rankingList">
+                    <!-- Ranking items go here -->
+                </ul>
             </div>
         </div>
     </main>
@@ -676,6 +777,10 @@
 
         // --- QUIZ LOGIC ---
         let selectedQuestions = 5;
+        let currentQuizData = [];
+        let currentQuestionIndex = 0;
+        let currentScore = 0;
+
         function selectRadio(element, num) {
             document.querySelectorAll('.radio-card').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
@@ -692,11 +797,18 @@
             }
 
             document.getElementById('quizResultArea').classList.add('active');
+            document.getElementById('rankingArea').style.display = 'none';
+            document.querySelector('.quiz-config-card').style.display = 'none';
+            
             const quizContent = document.getElementById('quizContent');
             quizContent.innerHTML = '';
             
             document.getElementById('btnGenerateQuiz').disabled = true;
             document.getElementById('typingQuiz').style.display = 'block';
+            document.getElementById('typingQuiz').textContent = "Analisando os PDFs e criando questões inéditas estruturadas... (isso pode levar uns 15-30 segundos)";
+            
+            currentScore = 0;
+            document.getElementById('quizScoreDisplay').textContent = `Pontos: 0`;
             
             try {
                 const response = await fetch('/api/quiz', { 
@@ -704,20 +816,147 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ num_questions: selectedQuestions, topics: topics })
                 });
+                
                 if (!response.ok) {
                     if(response.status === 401) window.location.reload();
                     throw new Error('Erro na API');
                 }
                 
+                const data = await response.json();
+                currentQuizData = data.questions;
+                currentQuestionIndex = 0;
+                
                 document.getElementById('typingQuiz').style.display = 'none';
-                await readStream(response, quizContent);
+                renderQuestion();
                 
             } catch (error) {
+                document.getElementById('typingQuiz').style.display = 'none';
                 quizContent.innerHTML = "<p>Erro de conexão ao gerar o simulado.</p>";
+                document.querySelector('.quiz-config-card').style.display = 'block';
             } finally {
                 document.getElementById('btnGenerateQuiz').disabled = false;
-                document.getElementById('typingQuiz').style.display = 'none';
             }
+        }
+
+        function renderQuestion() {
+            const quizContent = document.getElementById('quizContent');
+            const q = currentQuizData[currentQuestionIndex];
+            
+            document.getElementById('quizProgressTitle').textContent = `Questão ${currentQuestionIndex + 1} de ${currentQuizData.length}`;
+            
+            let optionsHtml = '';
+            q.options.forEach((opt, idx) => {
+                optionsHtml += `<button class="trivia-option" onclick="answerQuestion(${idx})">${opt}</button>`;
+            });
+
+            quizContent.innerHTML = `
+                <div class="trivia-question">${marked.parse(q.question)}</div>
+                <div class="trivia-options" id="triviaOptions">
+                    ${optionsHtml}
+                </div>
+                <div class="trivia-justification" id="triviaJustification">
+                    <strong>Justificativa:</strong><br>
+                    ${marked.parse(q.justification)}
+                </div>
+                <div class="trivia-controls">
+                    <button class="btn-generate" id="btnNextQuestion" style="display:none; width: auto;" onclick="nextQuestion()">Próxima Questão</button>
+                </div>
+            `;
+        }
+
+        function answerQuestion(selectedIndex) {
+            const q = currentQuizData[currentQuestionIndex];
+            const buttons = document.querySelectorAll('#triviaOptions .trivia-option');
+            
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === q.correct_option_index) {
+                    btn.classList.add('correct');
+                } else if (idx === selectedIndex) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            if (selectedIndex === q.correct_option_index) {
+                currentScore += 10;
+                document.getElementById('quizScoreDisplay').textContent = `Pontos: ${currentScore}`;
+            }
+
+            document.getElementById('triviaJustification').style.display = 'block';
+            
+            const btnNext = document.getElementById('btnNextQuestion');
+            btnNext.style.display = 'block';
+            if (currentQuestionIndex === currentQuizData.length - 1) {
+                btnNext.textContent = "Finalizar e Ver Ranking";
+            }
+        }
+
+        async function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuizData.length) {
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        async function finishQuiz() {
+            const quizContent = document.getElementById('quizContent');
+            quizContent.innerHTML = `
+                <div style="text-align: center; padding: 40px 0;">
+                    <h2 style="font-size: 2rem; margin-bottom: 16px;">Simulado Concluído!</h2>
+                    <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 32px;">Você fez <strong>${currentScore} pontos</strong>.</p>
+                    <button class="btn-generate" style="width: auto;" onclick="resetQuiz()">Fazer Novo Simulado</button>
+                </div>
+            `;
+            
+            // Submeter pontuação
+            try {
+                await fetch('/api/score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ points: currentScore })
+                });
+                
+                // Buscar ranking
+                const res = await fetch('/api/ranking');
+                if (res.ok) {
+                    const ranking = await res.json();
+                    renderRanking(ranking);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderRanking(ranking) {
+            const rankingArea = document.getElementById('rankingArea');
+            const rankingList = document.getElementById('rankingList');
+            rankingList.innerHTML = '';
+            
+            ranking.forEach((u, idx) => {
+                let medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx+1}º`;
+                let pic = u.picture ? `<img src="${u.picture}" style="width: 24px; height: 24px; border-radius: 50%;">` : '👤';
+                
+                rankingList.innerHTML += `
+                    <li class="ranking-item">
+                        <div style="display: flex; align-items: center; gap: 12px; font-weight: 500;">
+                            <span style="width: 24px; text-align: center;">${medal}</span>
+                            ${pic}
+                            ${u.name}
+                        </div>
+                        <div style="font-weight: 600; color: var(--accent-color);">
+                            ${u.score} pts <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(${u.games_played} jogos)</span>
+                        </div>
+                    </li>
+                `;
+            });
+            
+            rankingArea.style.display = 'block';
+        }
+
+        function resetQuiz() {
+            document.querySelector('.quiz-config-card').style.display = 'block';
+            document.getElementById('quizResultArea').classList.remove('active');
+            document.getElementById('rankingArea').style.display = 'none';
         }
     </script>
 </body>

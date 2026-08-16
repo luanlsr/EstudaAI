@@ -54,3 +54,14 @@ class Chunk(Base):
     embedding = Column(Vector(1536))
 
     document = relationship("Document", back_populates="chunks")
+
+class UserScore(Base):
+    __tablename__ = 'user_scores'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_email = Column(String, unique=True, nullable=False)
+    user_name = Column(String, nullable=False)
+    user_picture = Column(String)
+    score = Column(Integer, default=0)
+    games_played = Column(Integer, default=0)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)

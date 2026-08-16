@@ -101,38 +101,93 @@ class QuizQuery(BaseModel):
     num_questions: int = 5
     topics: Optional[str] = None
 
-@app.post("/api/quiz")
+class QuizOption(BaseModel):
+    text: str
+
+class QuizQuestion(BaseModel):
+    question: str
+    options: List[str]
+    correct_option_index: int
+    justification: str
+
+class QuizResponse(BaseModel):
+    questions: List[QuizQuestion]
+
+@app.post("/api/quiz", response_model=QuizResponse)
 async def generate_quiz(
     req: QuizQuery,
     db_session = Depends(get_db_session),
     user: dict = Depends(get_current_user)
 ):
-    """Gera um simulado automaticamente."""
+    """Gera um simulado automaticamente em formato JSON estruturado."""
     retriever = HybridRetriever(db_session=db_session, embedding_provider=embedding_provider)
     
-    async def event_generator():
-        try:
-            set_retriever(retriever)
-            topic_str = f" sobre os seguintes assuntos: {req.topics}" if req.topics else " gerais sobre todo o material"
-            prompt = f"""Gere um simulado avançado com exatamente {req.num_questions} questões de múltipla escolha inéditas{topic_str}. 
-            O formato deve ser claro, listando as questões primeiro e, ao final, o gabarito comentado detalhado com a citação das páginas."""
-            
-            initial_state = {"messages": [HumanMessage(content=prompt)]}
-            
-            async for event in research_agent.astream_events(initial_state, version="v2"):
-                kind = event["event"]
-                if kind == "on_chat_model_stream":
-                    chunk = event["data"]["chunk"]
-                    if chunk.content:
-                        import json
-                        yield f"data: {json.dumps({'chunk': chunk.content})}\n\n"
-            
-            yield f"data: {json.dumps({'done': True})}\n\n"
-        except Exception as e:
-            import json
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-            
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    # 1. Busca contexto baseado nos tópicos
+    query = req.topics if req.topics else "CEFS 2026 Resumo Geral"
+    docs = await retriever.asearch(query, top_k=15)
+    context = "\n\n".join([d.page_content for d in docs])
+    
+    # 2. Usa o modelo com saída estruturada
+    from langchain_openai import ChatOpenAI
+    topic_str = f" sobre: {req.topics}" if req.topics else ""
+    prompt = f"""Você é o examinador oficial do CEFS.
+Baseado **estritamente** nos fragmentos da apostila abaixo, crie um simulado com {req.num_questions} questões de múltipla escolha inéditas{topic_str}.
+Para cada questão, forneça o enunciado, exatamente 4 opções de resposta, o índice da opção correta (0 a 3) e uma justificativa detalhada citando a regra no texto.
+
+FRAGMENTOS DA APOSTILA:
+{context}
+"""
+    
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_structured_output(QuizResponse)
+    response = await llm.ainvoke([HumanMessage(content=prompt)])
+    
+    return response
+
+class ScorePayload(BaseModel):
+    points: int
+
+from sqlalchemy import select
+from infrastructure.database.models import UserScore
+
+@app.post("/api/score")
+async def add_score(req: ScorePayload, db_session: AsyncSession = Depends(get_db_session), user: dict = Depends(get_current_user)):
+    """Atualiza a pontuação do usuário e registra o jogo."""
+    query = select(UserScore).where(UserScore.user_email == user["email"])
+    result = await db_session.execute(query)
+    user_score = result.scalars().first()
+    
+    if not user_score:
+        user_score = UserScore(
+            user_email=user["email"],
+            user_name=user.get("name", "Aluno"),
+            user_picture=user.get("picture", ""),
+            score=req.points,
+            games_played=1
+        )
+        db_session.add(user_score)
+    else:
+        user_score.score += req.points
+        user_score.games_played += 1
+        
+    await db_session.commit()
+    return {"message": "Pontuação salva com sucesso!", "score": user_score.score}
+
+@app.get("/api/ranking")
+async def get_ranking(db_session: AsyncSession = Depends(get_db_session)):
+    """Retorna o Top 10 usuários."""
+    query = select(UserScore).order_by(UserScore.score.desc()).limit(10)
+    result = await db_session.execute(query)
+    scores = result.scalars().all()
+    
+    return [
+        {
+            "name": s.user_name,
+            "picture": s.user_picture,
+            "score": s.score,
+            "games_played": s.games_played
+        }
+        for s in scores
+    ]
 
 from fastapi import BackgroundTasks
 
