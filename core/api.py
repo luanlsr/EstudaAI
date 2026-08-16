@@ -12,7 +12,11 @@ from core.agent import create_research_agent
 from langchain_core.messages import HumanMessage
 import os
 
-from core.auth import auth_router, get_current_user
+from passlib.context import CryptContext
+from core.auth import auth_router, get_current_user, SECRET_KEY, ALGORITHM
+from jose import jwt
+from datetime import timedelta, datetime
+from fastapi import Response
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:password@db:5432/knowledge")
 if DATABASE_URL.startswith("postgresql://"):
@@ -36,6 +40,14 @@ async def startup_event():
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.execute(text("ALTER TABLE user_scores ADD COLUMN password_hash VARCHAR"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("ALTER TABLE user_scores ADD COLUMN rank VARCHAR"))
+        except Exception:
+            pass
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,6 +59,92 @@ app.add_middleware(
 
 # Inclui as rotas de autenticação
 app.include_router(auth_router)
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class RegisterPayload(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class LoginPayload(BaseModel):
+    email: str
+    password: str
+
+class RankPayload(BaseModel):
+    rank: str
+
+@app.post("/api/auth/register")
+async def register_user(payload: RegisterPayload, db_session: AsyncSession = Depends(get_db_session)):
+    query = select(UserScore).where(UserScore.user_email == payload.email)
+    result = await db_session.execute(query)
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Email já cadastrado.")
+        
+    hashed = pwd_context.hash(payload.password)
+    new_user = UserScore(
+        user_email=payload.email,
+        user_name=payload.name,
+        password_hash=hashed,
+        score=0,
+        games_played=0
+    )
+    db_session.add(new_user)
+    await db_session.commit()
+    return {"message": "Conta criada com sucesso!"}
+
+@app.post("/api/auth/login")
+async def login_user(payload: LoginPayload, response: Response, db_session: AsyncSession = Depends(get_db_session)):
+    query = select(UserScore).where(UserScore.user_email == payload.email)
+    result = await db_session.execute(query)
+    user = result.scalars().first()
+    
+    if not user or not user.password_hash or not pwd_context.verify(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Email ou senha incorretos.")
+        
+    expire = datetime.utcnow() + timedelta(days=7)
+    to_encode = {
+        "sub": user.user_email,
+        "name": user.user_name,
+        "picture": user.user_picture,
+        "exp": expire
+    }
+    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    response.set_cookie(key="access_token", value=token, httponly=True, secure=True, samesite="lax", max_age=7*24*3600)
+    return {"message": "Login realizado com sucesso!"}
+
+@app.get("/api/user/me")
+async def get_my_user(db_session: AsyncSession = Depends(get_db_session), current_user: dict = Depends(get_current_user)):
+    query = select(UserScore).where(UserScore.user_email == current_user["sub"])
+    result = await db_session.execute(query)
+    user = result.scalars().first()
+    if not user:
+        # User logged in via Google but hasn't played/saved yet
+        return {"email": current_user["sub"], "name": current_user.get("name", "Aluno"), "rank": None, "picture": current_user.get("picture")}
+    return {"email": user.user_email, "name": user.user_name, "rank": user.rank, "picture": user.user_picture}
+
+@app.post("/api/user/rank")
+async def update_rank(payload: RankPayload, db_session: AsyncSession = Depends(get_db_session), current_user: dict = Depends(get_current_user)):
+    query = select(UserScore).where(UserScore.user_email == current_user["sub"])
+    result = await db_session.execute(query)
+    user = result.scalars().first()
+    if user:
+        user.rank = payload.rank
+        await db_session.commit()
+        return {"message": "Posto/Graduação atualizado!"}
+    
+    # Se o usuário não existir ainda, cria
+    new_user = UserScore(
+        user_email=current_user["sub"],
+        user_name=current_user.get("name", "Aluno"),
+        user_picture=current_user.get("picture", ""),
+        rank=payload.rank,
+        score=0,
+        games_played=0
+    )
+    db_session.add(new_user)
+    await db_session.commit()
+    return {"message": "Posto/Graduação salvo com sucesso!"}
 
 embedding_provider = OpenAIEmbeddingProvider()
 research_agent = create_research_agent()

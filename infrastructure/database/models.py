@@ -60,8 +60,10 @@ class UserScore(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=True) # Para login comum
     user_name = Column(String, nullable=False)
-    user_picture = Column(String)
+    user_picture = Column(String, nullable=True)
+    rank = Column(String, nullable=True) # Posto/Graduação
     score = Column(Integer, default=0)
     games_played = Column(Integer, default=0)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
