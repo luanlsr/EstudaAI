@@ -1061,6 +1061,11 @@
                 const res = await fetch('/api/user/me');
                 if (res.ok) {
                     const data = await res.json();
+                    if (data.authenticated === false) {
+                        document.getElementById('loginScreen').style.display = 'flex';
+                        return;
+                    }
+                    
                     currentUser = data;
                     
                     document.getElementById('loginScreen').style.display = 'none';

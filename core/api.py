@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage
 import os
 
 from passlib.context import CryptContext
-from core.auth import auth_router, get_current_user, SECRET_KEY, ALGORITHM
+from core.auth import auth_router, get_current_user, get_current_user_optional, SECRET_KEY, ALGORITHM
 from jose import jwt
 from datetime import timedelta, datetime
 from fastapi import Response
@@ -117,7 +117,10 @@ async def login_user(payload: LoginPayload, response: Response, db_session: Asyn
     return {"message": "Login realizado com sucesso!"}
 
 @app.get("/api/user/me")
-async def get_my_user(db_session: AsyncSession = Depends(get_db_session), current_user: dict = Depends(get_current_user)):
+async def get_my_user(db_session: AsyncSession = Depends(get_db_session), current_user: dict = Depends(get_current_user_optional)):
+    if not current_user:
+        return {"authenticated": False}
+        
     query = select(UserScore).where(UserScore.user_email == current_user["sub"])
     result = await db_session.execute(query)
     user = result.scalars().first()

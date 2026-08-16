@@ -76,3 +76,13 @@ def get_current_user(request: Request):
 @auth_router.get("/me")
 async def get_me(user: dict = Depends(get_current_user)):
     return user
+
+def get_current_user_optional(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except Exception:
+        return None
