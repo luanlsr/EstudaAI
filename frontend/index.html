@@ -581,6 +581,90 @@
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Responsive Mobile First */
+        /* Responsive Mobile First */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+                height: auto;
+            }
+            .header-logo span {
+                display: none; /* Hide text on mobile to save space */
+            }
+            .user-profile span {
+                font-size: 0.85rem;
+                max-width: 140px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .nav-tabs {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 64px;
+                background: var(--bg-card);
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                border-top: 1px solid var(--border-color);
+                z-index: 100;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+            .tab {
+                flex-direction: column;
+                padding: 8px;
+                font-size: 0.7rem;
+                border-bottom: none !important;
+                gap: 4px;
+                flex: 1;
+                justify-content: center;
+                border-top: 2px solid transparent;
+            }
+            .tab.active {
+                color: var(--accent-color);
+                border-top-color: var(--accent-color);
+            }
+            .tab svg { width: 20px; height: 20px; }
+            
+            .view-section {
+                padding-bottom: 64px;
+            }
+            
+            .chat-container, .quiz-container {
+                padding: 16px 12px;
+            }
+            
+            .input-wrapper {
+                padding: 12px;
+            }
+            
+            .radio-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-box, .onboarding-box {
+                padding: 24px 20px;
+                width: 95%;
+            }
+            
+            .message-row.bot .message, .message-row.user .message {
+                max-width: 95%;
+            }
+            
+            .ranking-list li {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+        }
     </style>
 </head>
 <body>
