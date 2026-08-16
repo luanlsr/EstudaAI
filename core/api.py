@@ -140,9 +140,47 @@ async def get_my_user(db_session: AsyncSession = Depends(get_db_session), curren
     user = result.scalars().first()
     if not user:
         # User logged in via Google but hasn't played/saved yet
-        return {"email": current_user["sub"], "name": current_user.get("name", "Aluno"), "rank": None, "picture": current_user.get("picture")}
-    return {"email": user.user_email, "name": user.user_name, "rank": user.rank, "picture": user.user_picture}
+        return {"email": current_user["sub"], "name": current_user.get("name", "Aluno"), "rank": None, "picture": current_user.get("picture"), "is_admin": current_user["sub"] in ADMIN_EMAILS}
+    return {"email": user.user_email, "name": user.user_name, "rank": user.rank, "picture": user.user_picture, "is_admin": user.user_email in ADMIN_EMAILS}
 
+ADMIN_EMAILS = ["luanlsr@gmail.com", "luan@email.com", "luanlsr@hotmail.com"]
+
+def get_admin_user(current_user: dict = Depends(get_current_user)):
+    if current_user["sub"] not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    return current_user
+
+@app.get("/admin")
+async def admin_page():
+    return FileResponse("frontend/admin.html")
+
+@app.get("/api/admin/users")
+async def get_all_users(db_session: AsyncSession = Depends(get_db_session), admin: dict = Depends(get_admin_user)):
+    query = select(UserScore).order_by(UserScore.score.desc())
+    result = await db_session.execute(query)
+    users = result.scalars().all()
+    return [{"email": u.user_email, "name": u.user_name, "score": u.score, "games": u.games_played, "created_at": u.updated_at} for u in users]
+
+@app.delete("/api/admin/users/{email}")
+async def delete_user(email: str, db_session: AsyncSession = Depends(get_db_session), admin: dict = Depends(get_admin_user)):
+    query = select(UserScore).where(UserScore.user_email == email)
+    result = await db_session.execute(query)
+    user = result.scalars().first()
+    if user:
+        await db_session.delete(user)
+        await db_session.commit()
+    return {"message": "Usuário deletado."}
+
+@app.post("/api/admin/users/{email}/reset")
+async def reset_user_score(email: str, db_session: AsyncSession = Depends(get_db_session), admin: dict = Depends(get_admin_user)):
+    query = select(UserScore).where(UserScore.user_email == email)
+    result = await db_session.execute(query)
+    user = result.scalars().first()
+    if user:
+        user.score = 0
+        user.games_played = 0
+        await db_session.commit()
+    return {"message": "Pontuação resetada."}
 
 embedding_provider = OpenAIEmbeddingProvider()
 research_agent = create_research_agent()
