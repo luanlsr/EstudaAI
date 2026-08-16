@@ -102,9 +102,8 @@ async def register_user(payload: RegisterPayload, db_session: AsyncSession = Dep
         await db_session.commit()
         return {"message": "Conta criada com sucesso!"}
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}\n{error_details}")
+        print(f"Registration Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno no servidor ao criar a conta. Tente novamente mais tarde.")
 
 @app.post("/api/auth/login")
 async def login_user(payload: LoginPayload, response: Response, db_session: AsyncSession = Depends(get_db_session)):
