@@ -124,8 +124,8 @@ async def generate_quiz(
     
     # 1. Busca contexto baseado nos tópicos
     query = req.topics if req.topics else "CEFS 2026 Resumo Geral"
-    docs = await retriever.asearch(query, top_k=15)
-    context = "\n\n".join([d.page_content for d in docs])
+    docs = await retriever.search(query, top_k=15)
+    context = "\n\n".join([d["content"] for d in docs])
     
     # 2. Usa o modelo com saída estruturada
     from langchain_openai import ChatOpenAI
