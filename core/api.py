@@ -186,6 +186,14 @@ embedding_provider = OpenAIEmbeddingProvider()
 research_agent = create_research_agent()
 
 os.makedirs("frontend", exist_ok=True)
+@app.get("/sw.js")
+async def serve_sw():
+    return FileResponse("frontend/sw.js", media_type="application/javascript")
+
+@app.get("/manifest.json")
+async def serve_manifest():
+    return FileResponse("frontend/manifest.json", media_type="application/manifest+json")
+
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/")

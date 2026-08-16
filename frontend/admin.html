@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Painel Admin - EstudaAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --accent-color: #2563eb;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .btn-back {
+            padding: 8px 16px;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .btn-back:hover {
+            background: var(--border-color);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        td {
+            font-size: 0.95rem;
+        }
+
+        .user-email {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-reset {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .btn-reset:hover {
+            background: #fde68a;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Painel de Controle Admin</h1>
+        <a href="/" class="btn-back">Voltar ao App</a>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Simulados Feitos</th>
+                    <th>Pontuação Total</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <tr><td colspan="4" class="empty-state">Carregando usuários...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Check admin and load users
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 403) {
+                        Swal.fire('Acesso Negado', 'Você não tem permissão para acessar esta página.', 'error').then(() => {
+                            window.location.href = '/';
+                        });
+                        return;
+                    }
+                    throw new Error('Erro ao carregar usuários');
+                }
+                const users = await res.json();
+                renderUsers(users);
+            } catch (error) {
+                Swal.fire('Erro', error.message, 'error');
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhum usuário encontrado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>
+                        <div><strong>${u.name}</strong></div>
+                        <div class="user-email">${u.email}</div>
+                    </td>
+                    <td>${u.games}</td>
+                    <td><strong>${u.score}</strong> pts</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-action btn-reset" onclick="resetScore('${u.email}')">Zerar Pontos</button>
+                            <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">Remover</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function resetScore(email) {
+            const result = await Swal.fire({
+                title: 'Tem certeza?',
+                text: "Isso vai zerar a pontuação e os simulados feitos por este usuário.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Sim, zerar!',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/admin/users/${email}/reset`, { method: 'POST' });
+                    if(res.ok) {
+                        Swal.fire('Zerado!', 'A pontuação foi zerada com sucesso.', 'success');
+                        loadUsers();
+                    } else {
+                        throw new Error('Erro na requisição');
+                    }
+                } catch(e) {
+                    Swal.fire('Erro', 'Não foi possível zerar os pontos.', 'error');
+                }
+            }
+        }
+
+        async function deleteUser(email) {
+            const result = await Swal.fire({
+                title: 'Remover usuário?',
+                text: "Esta ação é irreversível. O usuário e todos os seus dados serão apagados permanentemente.",
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Sim, remover!',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/admin/users/${email}`, { method: 'DELETE' });
+                    if(res.ok) {
+                        Swal.fire('Removido!', 'O usuário foi deletado da plataforma.', 'success');
+                        loadUsers();
+                    } else {
+                        throw new Error('Erro na requisição');
+                    }
+                } catch(e) {
+                    Swal.fire('Erro', 'Não foi possível remover o usuário.', 'error');
+                }
+            }
+        }
+
+        // Initialize
+        loadUsers();
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+    "name": "EstudaAI CEFS",
+    "short_name": "EstudaAI",
+    "description": "Plataforma de estudos com Inteligência Artificial para o concurso interno CEFS",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#2563eb",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "/static/logo.jpg",
+        "sizes": "192x192",
+        "type": "image/jpeg"
+      },
+      {
+        "src": "/static/logo.jpg",
+        "sizes": "512x512",
+        "type": "image/jpeg"
+      }
+    ]
+  }
