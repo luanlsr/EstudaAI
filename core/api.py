@@ -80,7 +80,7 @@ async def register_user(payload: RegisterPayload, db_session: AsyncSession = Dep
         if result.scalars().first():
             raise HTTPException(status_code=400, detail="Email já cadastrado.")
             
-        hashed = pwd_context.hash(payload.password)
+        hashed = pwd_context.hash(payload.password[:72])
         new_user = UserScore(
             user_email=payload.email,
             user_name=payload.name,
@@ -102,7 +102,7 @@ async def login_user(payload: LoginPayload, response: Response, db_session: Asyn
     result = await db_session.execute(query)
     user = result.scalars().first()
     
-    if not user or not user.password_hash or not pwd_context.verify(payload.password, user.password_hash):
+    if not user or not user.password_hash or not pwd_context.verify(payload.password[:72], user.password_hash):
         raise HTTPException(status_code=401, detail="Email ou senha incorretos.")
         
     expire = datetime.utcnow() + timedelta(days=7)
