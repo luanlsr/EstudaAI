@@ -639,7 +639,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Assuntos (Selecione um ou mais)</label>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+                        <label style="margin-bottom: 0;">Assuntos (Selecione um ou mais)</label>
+                        <div style="display: flex; gap: 16px;">
+                            <button type="button" onclick="selectAllTopics()" style="background: none; border: none; color: var(--accent-color); font-size: 0.875rem; font-weight: 600; cursor: pointer; padding: 0;">Marcar Todos</button>
+                            <button type="button" onclick="deselectAllTopics()" style="background: none; border: none; color: var(--text-muted); font-size: 0.875rem; font-weight: 500; cursor: pointer; padding: 0;">Desmarcar Todos</button>
+                        </div>
+                    </div>
                     <div class="checkbox-grid">
                         <label class="checkbox-label"><input type="checkbox" value="Direito Constitucional, Direito Penal, Direito Penal Militar, Direito Administrativo" checked> ⚖️ Direito</label>
                         <label class="checkbox-label"><input type="checkbox" value="Justiça Militar, Processo Penal Militar, IPM"> 🏛️ Justiça Militar</label>
@@ -846,6 +852,16 @@
 
         // --- QUIZ LOGIC ---
         let selectedQuestions = 5;
+
+        function selectAllTopics() {
+            document.querySelectorAll('.checkbox-grid input[type="checkbox"]').forEach(cb => cb.checked = true);
+        }
+
+        function deselectAllTopics() {
+            document.querySelectorAll('.checkbox-grid input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        let loadingInterval;
         let currentQuizData = [];
         let currentQuestionIndex = 0;
         let currentScore = 0;
