@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EstudaIA - Simulado CEFS</title>
+    <title>EstudaIA - Assistente RAG</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Usando o CDN do Marked.js para renderizar o Markdown lindamente -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
-            --bg-body: #f3f4f6;
-            --bg-sidebar: #ffffff;
+            --bg-body: #ffffff;
             --bg-chat: #ffffff;
-            --text-primary: #111827;
-            --text-secondary: #4b5563;
-            --text-muted: #9ca3af;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
             --accent-color: #0f172a;
             --accent-hover: #1e293b;
-            --border-color: #e5e7eb;
+            --border-color: #e2e8f0;
             --user-msg-bg: #f8fafc;
             --bot-msg-bg: #ffffff;
-            --item-hover: #f3f4f6;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         body {
@@ -36,87 +37,38 @@
             background-color: var(--bg-body);
             color: var(--text-primary);
             display: flex;
+            flex-direction: column;
             height: 100vh;
             overflow: hidden;
             line-height: 1.6;
         }
 
-        /* Sidebar Styling */
-        .sidebar {
-            width: 320px;
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border-color);
+        /* Top Navigation / Header */
+        .header {
+            width: 100%;
+            height: 64px;
             display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease;
-            z-index: 10;
-        }
-
-        .sidebar-header {
-            padding: 24px;
+            align-items: center;
+            justify-content: center;
             border-bottom: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 50;
+            flex-shrink: 0;
         }
 
-        .sidebar-header h2 {
+        .header h1 {
             font-size: 1.125rem;
             font-weight: 600;
+            letter-spacing: -0.025em;
             color: var(--text-primary);
-        }
-
-        .sidebar-header p {
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .question-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 8px;
         }
 
-        .question-item {
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            background: #fff;
-            transition: all 0.2s ease;
-        }
-
-        .question-item:hover {
-            background-color: var(--item-hover);
-            border-color: #d1d5db;
-            transform: translateY(-1px);
-        }
-
-        .question-item h3 {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .question-item p {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            border-radius: 12px;
-            background: #eef2ff;
+        .header h1 svg {
             color: #4f46e5;
-            margin-bottom: 8px;
         }
 
         /* Main Chat Area */
@@ -124,151 +76,186 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            background-color: var(--bg-body);
             position: relative;
+            align-items: center;
         }
 
         .chat-container {
             flex: 1;
+            width: 100%;
             overflow-y: auto;
             padding: 40px 24px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 32px;
             scroll-behavior: smooth;
         }
 
         .chat-wrapper {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 768px;
             width: 100%;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 32px;
+        }
+
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .message-row.bot {
+            justify-content: flex-start;
         }
 
         .message {
             max-width: 85%;
-            padding: 20px 24px;
-            border-radius: 12px;
+            padding: 16px 20px;
+            border-radius: 16px;
             font-size: 0.9375rem;
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             line-height: 1.6;
+            color: var(--text-primary);
         }
 
         .message.user {
-            align-self: flex-end;
             background-color: var(--user-msg-bg);
             border: 1px solid var(--border-color);
-            color: var(--text-primary);
             border-bottom-right-radius: 4px;
         }
 
         .message.bot {
-            align-self: flex-start;
             background-color: var(--bot-msg-bg);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             border-bottom-left-radius: 4px;
+            padding-left: 0; /* Minimal bot style, no box */
+            max-width: 100%;
+        }
+
+        /* Bot Identity Marker */
+        .bot-identity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .bot-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #4f46e5, #9333ea);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
         }
 
         /* Markdown Styles inside bot message */
-        .message.bot {
-            color: #374151;
-        }
-        .message.bot strong { 
-            color: #111827; 
-            font-weight: 700; 
-        }
-        .message.bot h3 {
+        .message-content p { margin-bottom: 12px; }
+        .message-content p:last-child { margin-bottom: 0; }
+        
+        .message-content strong { font-weight: 600; }
+        
+        .message-content h3 {
             font-size: 0.95rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-top: 16px;
+            margin-top: 24px;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 6px;
+            font-weight: 600;
         }
         
-        /* O primeiro H3 (✅ Resposta) */
-        .message.bot h3:nth-of-type(1) { 
-            margin-top: 0; 
-            color: #059669; /* Verde esmeralda */
-        }
+        .message-content h3:nth-of-type(1) { margin-top: 0; color: #059669; }
+        .message-content h3:nth-of-type(2) { color: #2563eb; }
+        .message-content h3:nth-of-type(3) { color: #9333ea; }
         
-        /* O segundo H3 (🧠 Justificativa) */
-        .message.bot h3:nth-of-type(2) { 
-            color: #2563eb; /* Azul royal */
-        }
-        
-        /* O terceiro H3 (📚 Fonte Oficial) */
-        .message.bot h3:nth-of-type(3) { 
-            color: #9333ea; /* Roxo vibrante */
-        }
-
-        .message.bot p { margin-bottom: 12px; }
-        .message.bot p:last-child { margin-bottom: 0; }
-        
-        .message.bot em {
-            background-color: #f3f4f6;
-            padding: 2px 6px;
+        .message-content em {
+            background-color: #f8fafc;
+            padding: 2px 8px;
             border-radius: 4px;
             font-style: normal;
             font-size: 0.85rem;
-            color: #6b7280;
-            border: 1px solid #e5e7eb;
+            color: #64748b;
+            border: 1px solid var(--border-color);
         }
 
+        /* Input Area */
         .input-wrapper {
-            background-color: var(--bg-body);
+            width: 100%;
             padding: 24px;
             display: flex;
             justify-content: center;
+            background: linear-gradient(to top, rgba(255,255,255,1) 60%, rgba(255,255,255,0));
+            flex-shrink: 0;
         }
 
         .input-container {
             width: 100%;
-            max-width: 800px;
-            background: var(--bg-sidebar);
+            max-width: 768px;
+            background: #ffffff;
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 8px 12px;
+            border-radius: 16px;
+            padding: 12px 16px;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             gap: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow-md);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-container:focus-within {
+            border-color: #cbd5e1;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
         textarea {
             flex: 1;
-            padding: 12px;
+            padding: 4px 0;
             border: none;
             font-size: 0.9375rem;
             font-family: inherit;
             outline: none;
             resize: none;
             background: transparent;
-            max-height: 150px;
-            min-height: 48px;
+            max-height: 200px;
+            min-height: 24px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
         }
 
         button.send-btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
+            border-radius: 10px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-bottom: -2px;
         }
 
         button.send-btn:hover:not(:disabled) {
             background-color: var(--accent-hover);
+            transform: translateY(-1px);
         }
 
         button.send-btn:active:not(:disabled) {
@@ -276,15 +263,15 @@
         }
 
         button.send-btn:disabled {
-            background-color: var(--text-muted);
+            background-color: #f1f5f9;
+            color: #cbd5e1;
             cursor: not-allowed;
         }
 
         .typing-indicator {
             display: none;
-            align-self: flex-start;
-            padding: 16px 24px;
-            color: var(--text-secondary);
+            padding-left: 40px;
+            color: var(--text-muted);
             font-size: 0.875rem;
             font-style: italic;
         }
@@ -297,7 +284,7 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -309,44 +296,58 @@
 
         /* Mobile Adjustments */
         @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; height: 250px; border-right: none; border-bottom: 1px solid var(--border-color); }
-            .message { max-width: 95%; }
+            .chat-container { padding: 24px 16px; }
+            .input-wrapper { padding: 16px; }
+            .message { max-width: 92%; }
         }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Caderno de Prova</h2>
-            <p>Clique em uma questão para enviar ao assistente</p>
-        </div>
-        <div class="question-list" id="question-list">
-            <!-- Questions injected via JS -->
-        </div>
-    </aside>
+    <header class="header">
+        <h1>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            EstudaIA
+        </h1>
+    </header>
 
     <main class="main-content">
         <div class="chat-container" id="chat">
             <div class="chat-wrapper" id="chat-wrapper">
-                <div class="message bot">
-                    <p><strong>Olá! Sou seu tutor do CEFS 2026.</strong></p>
-                    <p>Estou conectado à apostila oficial e à legislação. Selecione uma das questões ao lado ou digite sua própria dúvida/simulado abaixo.</p>
+                <!-- Mensagem Inicial -->
+                <div class="message-row bot">
+                    <div class="message bot">
+                        <div class="bot-identity">
+                            <div class="bot-avatar">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            Assistente Especializado
+                        </div>
+                        <div class="message-content">
+                            <p><strong>Olá! Sou o seu tutor de estudos focado nos documentos e leis oficiais.</strong></p>
+                            <p>Como posso te ajudar hoje? Envie uma questão de simulado ou uma dúvida sobre o material de estudo.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="chat-wrapper">
                 <div class="typing-indicator" id="typing">
-                    Consultando a base de dados oficial<span>.</span><span>.</span><span>.</span>
+                    Consultando a base de documentos<span>.</span><span>.</span><span>.</span>
                 </div>
             </div>
         </div>
 
         <div class="input-wrapper">
             <form class="input-container" id="form">
-                <textarea id="query" rows="1" placeholder="Cole sua questão aqui (com as alternativas)..." required></textarea>
+                <textarea id="query" rows="1" placeholder="Pergunte qualquer coisa sobre o regulamento..." required></textarea>
                 <button type="submit" class="send-btn" id="submitBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
@@ -356,75 +357,24 @@
     </main>
 
     <script>
-        // Banco de questões hardcoded baseado no test_questions.md gerado
-        const questions = [
-            {
-                type: "Múltipla Escolha",
-                title: "1. Modalidade do CEFS",
-                text: "Segundo o texto de apresentação do CEFS (Legislação Processual Penal Militar), o Curso Especial de Formação de Sargentos é realizado preferencialmente em qual formato?\nA) Apenas presencialmente, exigindo dedicação exclusiva no quartel.\nB) Na modalidade de ensino a distância, oferecendo flexibilidade ao Sgt PM.\nC) Através de seminários quinzenais obrigatórios.\nD) Por meio de intercâmbio com outras forças policiais."
-            },
-            {
-                type: "Múltipla Escolha",
-                title: "2. Regra de Continência",
-                text: "De acordo com o Art. 52 do regulamento, no período compreendido entre o arriar da Bandeira e o toque de alvorada no dia seguinte, a tropa deve prestar continência a quais elementos?\nA) Apenas aos oficiais generais e comandantes de batalhão.\nB) A ninguém, pois o expediente encontra-se encerrado.\nC) Apenas à Bandeira Nacional e ao Hino Nacional.\nD) À Bandeira Nacional, Hino Nacional, Presidente da República, bandeiras/hinos de outras nações e a outra tropa."
-            },
-            {
-                type: "Múltipla Escolha",
-                title: "3. Formações Emassadas",
-                text: "Nas formações emassadas de batalhão e de companhia (Art. 270, § 2º), como é dado o comando de execução da continência ('Olhar à Direita/Esquerda')?\nA) Pelo oficial de dia através de rádio.\nB) Por sinais luminosos coordenados pela guarda.\nC) Somente por toque de corneta ou à viva voz dos respectivos comandantes.\nD) Pelos comandantes de pelotão de forma independente."
-            },
-            {
-                type: "Questão Direta",
-                title: "4. Exceção à Regra",
-                text: "Qual é a exceção prevista no parágrafo único do Art. 52 sobre as regras de prestar continência? Quem está isento da regra geral e a quem eles prestam continência?"
-            },
-            {
-                type: "Questão Direta",
-                title: "5. Sentinela",
-                text: "De acordo com o Art. 80, quais são os procedimentos exatos que uma sentinela deve adotar para prestar continência a uma tropa comandada por um oficial que passe a dez passos de distância?"
-            },
-            {
-                type: "Verdadeiro ou Falso",
-                title: "6. Julgamento da Continência",
-                text: "( ) V ou F: À passagem de outra tropa, a tropa que está em forma e parada deve se voltar para ela e tomar a posição de descansar.\n\nJulgue o item acima justificando com a documentação oficial."
-            }
-        ];
-
-        // Render Sidebar
-        const questionListEl = document.getElementById('question-list');
         const inputEl = document.getElementById('query');
-        
-        questions.forEach(q => {
-            const div = document.createElement('div');
-            div.className = 'question-item';
-            div.innerHTML = `
-                <span class="badge">${q.type}</span>
-                <h3>${q.title}</h3>
-                <p>${q.text}</p>
-            `;
-            div.onclick = () => {
-                inputEl.value = q.text;
-                inputEl.focus();
-                adjustTextareaHeight();
-            };
-            questionListEl.appendChild(div);
-        });
-
-        // Auto-resize textarea
-        function adjustTextareaHeight() {
-            inputEl.style.height = 'auto';
-            inputEl.style.height = (inputEl.scrollHeight) + 'px';
-        }
-        inputEl.addEventListener('input', adjustTextareaHeight);
-
-        // Chat Logic
         const form = document.getElementById('form');
         const chatWrapper = document.getElementById('chat-wrapper');
         const chatContainer = document.getElementById('chat');
         const submitBtn = document.getElementById('submitBtn');
         const typingIndicator = document.getElementById('typing');
 
+        // Auto-resize textarea
+        function adjustTextareaHeight() {
+            inputEl.style.height = 'auto';
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + 'px';
+        }
+        inputEl.addEventListener('input', adjustTextareaHeight);
+
         function addMessage(text, isUser = false) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = `message-row ${isUser ? 'user' : 'bot'}`;
+            
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${isUser ? 'user' : 'bot'}`;
             
@@ -432,11 +382,24 @@
                 // Preservar quebras de linha para usuário
                 msgDiv.innerHTML = text.replace(/\n/g, '<br>');
             } else {
-                // Usar Marked.js para formatar a resposta do agente (negritos, listas)
-                msgDiv.innerHTML = marked.parse(text);
+                // Template moderno para o bot com avatar
+                msgDiv.innerHTML = `
+                    <div class="bot-identity">
+                        <div class="bot-avatar">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        Assistente Especializado
+                    </div>
+                    <div class="message-content">
+                        ${marked.parse(text)}
+                    </div>
+                `;
             }
 
-            chatWrapper.appendChild(msgDiv);
+            rowDiv.appendChild(msgDiv);
+            chatWrapper.appendChild(rowDiv);
             scrollToBottom();
         }
 
@@ -464,6 +427,7 @@
             scrollToBottom();
 
             try {
+                // O código fará uma requisição para a API local ou proxy configurado
                 const response = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -481,7 +445,7 @@
                 }
                 
             } catch (error) {
-                addMessage("Houve um erro de conexão. Tente novamente.", false);
+                addMessage("Houve um erro de conexão. Verifique se o backend está rodando.", false);
             } finally {
                 submitBtn.disabled = false;
                 typingIndicator.style.display = 'none';
