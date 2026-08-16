@@ -11,6 +11,8 @@ from core.skills import set_retriever
 from core.agent import create_research_agent
 from langchain_core.messages import HumanMessage
 import os
+import hashlib
+import base64
 
 from passlib.context import CryptContext
 from core.auth import auth_router, get_current_user, get_current_user_optional, SECRET_KEY, ALGORITHM
@@ -71,6 +73,13 @@ class LoginPayload(BaseModel):
     email: str
     password: str
 
+def get_safe_password(pwd: str) -> str:
+    # Use SHA-256 to hash the password first, which always returns 32 bytes.
+    # Base64 encode it so it fits nicely within bcrypt's 72 byte limit.
+    # This securely supports passwords of infinite length and with any multibyte (emoji) characters.
+    digest = hashlib.sha256(pwd.encode('utf-8')).digest()
+    return base64.b64encode(digest).decode('utf-8')
+
 
 @app.post("/api/auth/register")
 async def register_user(payload: RegisterPayload, db_session: AsyncSession = Depends(get_db_session)):
@@ -80,7 +89,7 @@ async def register_user(payload: RegisterPayload, db_session: AsyncSession = Dep
         if result.scalars().first():
             raise HTTPException(status_code=400, detail="Email já cadastrado.")
             
-        hashed = pwd_context.hash(payload.password[:72])
+        hashed = pwd_context.hash(get_safe_password(payload.password))
         new_user = UserScore(
             user_email=payload.email,
             user_name=payload.name,
@@ -102,7 +111,7 @@ async def login_user(payload: LoginPayload, response: Response, db_session: Asyn
     result = await db_session.execute(query)
     user = result.scalars().first()
     
-    if not user or not user.password_hash or not pwd_context.verify(payload.password[:72], user.password_hash):
+    if not user or not user.password_hash or not pwd_context.verify(get_safe_password(payload.password), user.password_hash):
         raise HTTPException(status_code=401, detail="Email ou senha incorretos.")
         
     expire = datetime.utcnow() + timedelta(days=7)
