@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EstudaAI - Assistente RAG</title>
+    <title>EstudaAI - Plataforma RAG</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
-            --bg-body: #ffffff;
-            --bg-chat: #ffffff;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
             --text-primary: #0f172a;
             --text-secondary: #475569;
             --text-muted: #94a3b8;
-            --accent-color: #0f172a;
-            --accent-hover: #1e293b;
+            --accent-color: #2563eb;
+            --accent-hover: #1d4ed8;
             --border-color: #e2e8f0;
             --user-msg-bg: #f8fafc;
             --bot-msg-bg: #ffffff;
@@ -52,49 +52,56 @@
             justify-content: space-between;
             padding: 0 24px;
             border-bottom: 1px solid var(--border-color);
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
+            background-color: var(--bg-card);
             z-index: 50;
             flex-shrink: 0;
         }
 
         .header-logo {
-            font-size: 1.125rem;
-            font-weight: 600;
+            font-size: 1.25rem;
+            font-weight: 700;
             letter-spacing: -0.025em;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo svg { color: var(--accent-color); }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            height: 100%;
+            align-items: flex-end;
+            margin-left: 32px;
+        }
+
+        .tab {
+            padding: 16px 20px;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .header-logo svg {
-            color: #4f46e5;
+        .tab.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
         }
+
+        .tab:hover:not(.active) { color: var(--text-primary); }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 16px;
-        }
-
-        .btn-quiz {
-            background-color: #f1f5f9;
-            color: #0f172a;
-            border: 1px solid #e2e8f0;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        
-        .btn-quiz:hover {
-            background-color: #e2e8f0;
+            margin-left: auto;
         }
 
         .user-profile {
@@ -118,16 +125,13 @@
             margin-left: 8px;
         }
         
-        .btn-logout:hover {
-            text-decoration: underline;
-            color: #ef4444;
-        }
+        .btn-logout:hover { color: #ef4444; }
 
         /* Login Screen */
         .login-screen {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--bg-body);
+            background-color: var(--bg-card);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -144,16 +148,8 @@
             box-shadow: var(--shadow-md);
         }
 
-        .login-box h2 {
-            margin-bottom: 16px;
-            font-size: 1.5rem;
-        }
-        
-        .login-box p {
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-            font-size: 0.9375rem;
-        }
+        .login-box h2 { margin-bottom: 16px; font-size: 1.5rem; }
+        .login-box p { color: var(--text-secondary); margin-bottom: 32px; font-size: 0.9375rem; }
 
         .btn-google {
             display: inline-flex;
@@ -171,20 +167,20 @@
             box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
             transition: background-color 0.2s;
         }
+        .btn-google:hover { background-color: #f8f9fa; }
 
-        .btn-google:hover {
-            background-color: #f8f9fa;
-        }
-
-        /* Main Chat Area */
-        .main-content {
+        /* Main Content Areas */
+        .view-section {
             flex: 1;
-            display: none; /* Oculto até autenticar */
+            display: none;
             flex-direction: column;
             position: relative;
-            align-items: center;
+            background: var(--bg-card);
         }
 
+        .view-section.active { display: flex; }
+
+        /* Chat View */
         .chat-container {
             flex: 1;
             width: 100%;
@@ -197,7 +193,7 @@
         }
 
         .chat-wrapper {
-            max-width: 768px;
+            max-width: 800px;
             width: 100%;
             margin: 0 auto;
             display: flex;
@@ -205,27 +201,17 @@
             gap: 32px;
         }
 
-        .message-row {
-            display: flex;
-            width: 100%;
-        }
-
-        .message-row.user {
-            justify-content: flex-end;
-        }
-
-        .message-row.bot {
-            justify-content: flex-start;
-        }
+        .message-row { display: flex; width: 100%; }
+        .message-row.user { justify-content: flex-end; }
+        .message-row.bot { justify-content: flex-start; }
 
         .message {
             max-width: 85%;
             padding: 16px 20px;
             border-radius: 16px;
             font-size: 0.9375rem;
-            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fadeIn 0.3s ease;
             line-height: 1.6;
-            color: var(--text-primary);
         }
 
         .message.user {
@@ -235,8 +221,7 @@
         }
 
         .message.bot {
-            background-color: var(--bot-msg-bg);
-            border-bottom-left-radius: 4px;
+            background-color: transparent;
             padding-left: 0;
             max-width: 100%;
         }
@@ -254,7 +239,7 @@
             width: 28px;
             height: 28px;
             border-radius: 6px;
-            background: linear-gradient(135deg, #4f46e5, #9333ea);
+            background: var(--accent-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -263,34 +248,7 @@
 
         .message-content p { margin-bottom: 12px; }
         .message-content p:last-child { margin-bottom: 0; }
-        .message-content strong { font-weight: 600; }
         
-        .message-content h3 {
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 24px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 600;
-        }
-        
-        .message-content h3:nth-of-type(1) { margin-top: 0; color: #059669; }
-        .message-content h3:nth-of-type(2) { color: #2563eb; }
-        .message-content h3:nth-of-type(3) { color: #9333ea; }
-        
-        .message-content em {
-            background-color: #f8fafc;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-style: normal;
-            font-size: 0.85rem;
-            color: #64748b;
-            border: 1px solid var(--border-color);
-        }
-
         .input-wrapper {
             width: 100%;
             padding: 24px;
@@ -302,7 +260,7 @@
 
         .input-container {
             width: 100%;
-            max-width: 768px;
+            max-width: 800px;
             background: #ffffff;
             border: 1px solid var(--border-color);
             border-radius: 16px;
@@ -311,12 +269,6 @@
             align-items: flex-end;
             gap: 12px;
             box-shadow: var(--shadow-md);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .input-container:focus-within {
-            border-color: #cbd5e1;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
         textarea {
@@ -330,12 +282,7 @@
             background: transparent;
             max-height: 200px;
             min-height: 24px;
-            line-height: 1.5;
             color: var(--text-primary);
-        }
-
-        textarea::placeholder {
-            color: var(--text-muted);
         }
 
         button.send-btn {
@@ -353,41 +300,120 @@
             flex-shrink: 0;
             margin-bottom: -2px;
         }
+        button.send-btn:hover:not(:disabled) { background-color: var(--accent-hover); }
+        button.send-btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
 
-        button.send-btn:hover:not(:disabled) {
-            background-color: var(--accent-hover);
-            transform: translateY(-1px);
+        /* Quiz View */
+        .quiz-container {
+            flex: 1;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
         }
 
-        button.send-btn:disabled {
-            background-color: #f1f5f9;
-            color: #cbd5e1;
-            cursor: not-allowed;
+        .quiz-config-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
         }
+
+        .quiz-config-card h2 { margin-bottom: 24px; font-size: 1.25rem; }
+
+        .form-group { margin-bottom: 24px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .radio-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: var(--bg-body);
+        }
+        
+        .radio-card.selected {
+            border-color: var(--accent-color);
+            background-color: #eff6ff;
+            color: var(--accent-color);
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        
+        .btn-generate {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        .btn-generate:hover:not(:disabled) { background-color: var(--accent-hover); }
+        .btn-generate:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+        .quiz-result-area {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+            display: none;
+        }
+
+        .quiz-result-area.active { display: block; }
+
+        .markdown-body {
+            line-height: 1.7;
+        }
+        .markdown-body h3 { margin-top: 24px; margin-bottom: 12px; }
+        .markdown-body p { margin-bottom: 16px; }
 
         .typing-indicator {
             display: none;
-            padding-left: 40px;
             color: var(--text-muted);
             font-size: 0.875rem;
             font-style: italic;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* Loading Spinner */
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(0,0,0,0.1);
-            border-radius: 50%;
-            border-left-color: #0f172a;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -396,7 +422,7 @@
     <div id="loginScreen" class="login-screen">
         <div class="login-box">
             <h2>Bem-vindo ao EstudaAI</h2>
-            <p>Faça login para acessar o assistente e os simulados do CEFS.</p>
+            <p>Faça login para acessar o assistente RAG e gerar simulados oficiais do CEFS.</p>
             <a href="/auth/google/login" class="btn-google">
                 <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Entrar com o Google
@@ -406,19 +432,29 @@
 
     <!-- App Principal -->
     <header class="header" id="appHeader" style="display: none;">
-        <div class="header-logo">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                <path d="M2 17l10 5 10-5"></path>
-                <path d="M2 12l10 5 10-5"></path>
-            </svg>
-            EstudaAI
+        <div style="display: flex; align-items: center; height: 100%;">
+            <div class="header-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                EstudaAI
+            </div>
+            
+            <div class="nav-tabs">
+                <div class="tab active" onclick="switchTab('chat')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    Tutor Chat
+                </div>
+                <div class="tab" onclick="switchTab('quiz')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Simulados
+                </div>
+            </div>
         </div>
+
         <div class="header-controls">
-            <button class="btn-quiz" id="btnQuiz" onclick="generateQuiz()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Gerar Simulado
-            </button>
             <div class="user-profile" id="userProfile">
                 <img id="userPicture" src="" alt="Avatar" style="display:none;">
                 <span id="userName"></span>
@@ -427,52 +463,80 @@
         </div>
     </header>
 
-    <main class="main-content" id="mainContent">
+    <!-- ABA 1: CHAT -->
+    <main class="view-section" id="view-chat">
         <div class="chat-container" id="chat">
             <div class="chat-wrapper" id="chat-wrapper">
                 <div class="message-row bot">
                     <div class="message bot">
                         <div class="bot-identity">
                             <div class="bot-avatar">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             </div>
-                            Assistente Especializado
+                            Tutor Especialista
                         </div>
                         <div class="message-content">
-                            <p><strong>Olá! Sou o seu tutor de estudos focado nos documentos e leis oficiais.</strong></p>
-                            <p>Como posso te ajudar hoje? Envie uma dúvida ou clique no botão acima para gerar um simulado de questões inéditas.</p>
+                            <p><strong>Olá! Sou o seu tutor de estudos do CEFS.</strong></p>
+                            <p>Tire suas dúvidas jurídicas ou sobre os regulamentos. Minhas respostas são baseadas estritamente nas apostilas oficiais.</p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="chat-wrapper">
-                <div class="typing-indicator" id="typing">
-                    Consultando a base de documentos e raciocinando...
-                </div>
+                <div class="typing-indicator" id="typingChat">Buscando na documentação...</div>
             </div>
         </div>
 
         <div class="input-wrapper">
-            <form class="input-container" id="form">
-                <textarea id="query" rows="1" placeholder="Pergunte qualquer coisa sobre o regulamento..." required></textarea>
+            <form class="input-container" id="formChat">
+                <textarea id="query" rows="1" placeholder="Ex: Quais são os prazos do IPM segundo o CPPM?" required></textarea>
                 <button type="submit" class="send-btn" id="submitBtn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </form>
         </div>
     </main>
 
+    <!-- ABA 2: SIMULADOS -->
+    <main class="view-section" id="view-quiz">
+        <div class="quiz-container">
+            <div class="quiz-config-card">
+                <h2>Configurar Novo Simulado</h2>
+                
+                <div class="form-group">
+                    <label>Quantidade de Questões</label>
+                    <div class="radio-group" id="numQuestionsGroup">
+                        <div class="radio-card selected" onclick="selectRadio(this, 5)">5 Questões</div>
+                        <div class="radio-card" onclick="selectRadio(this, 10)">10 Questões</div>
+                        <div class="radio-card" onclick="selectRadio(this, 20)">20 Questões</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Assuntos (Selecione um ou mais)</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-label"><input type="checkbox" value="Direito Constitucional" checked> Direito Constitucional</label>
+                        <label class="checkbox-label"><input type="checkbox" value="Direitos Humanos"> Direitos Humanos</label>
+                        <label class="checkbox-label"><input type="checkbox" value="Direito Penal Militar"> Direito Penal Militar</label>
+                        <label class="checkbox-label"><input type="checkbox" value="Processo Penal Militar"> Processo Penal Militar</label>
+                        <label class="checkbox-label"><input type="checkbox" value="Legislação Institucional (Estatuto/Regulamento)"> Legislação Institucional</label>
+                        <label class="checkbox-label"><input type="checkbox" value="Procedimentos Operacionais Padrão (POP)"> POP / Prática Operacional</label>
+                    </div>
+                </div>
+
+                <button class="btn-generate" id="btnGenerateQuiz" onclick="generateQuiz()">Gerar Simulado Agora</button>
+            </div>
+
+            <div class="quiz-result-area" id="quizResultArea">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Seu Simulado</h2>
+                <div class="typing-indicator" id="typingQuiz" style="margin-bottom: 20px;">Analisando os PDFs e criando questões inéditas...</div>
+                <div class="markdown-body" id="quizContent"></div>
+            </div>
+        </div>
+    </main>
+
     <script>
-        const loginScreen = document.getElementById('loginScreen');
-        const mainContent = document.getElementById('mainContent');
-        const appHeader = document.getElementById('appHeader');
-        
-        // Verificar autenticação
+        // --- AUTH ---
         async function checkAuth() {
             try {
                 const res = await fetch('/auth/google/me');
@@ -483,90 +547,31 @@
                         document.getElementById('userPicture').src = user.picture;
                         document.getElementById('userPicture').style.display = 'block';
                     }
-                    
-                    loginScreen.style.display = 'none';
-                    mainContent.style.display = 'flex';
-                    appHeader.style.display = 'flex';
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('appHeader').style.display = 'flex';
+                    switchTab('chat');
                 } else {
-                    // Sessão inválida ou sem login
-                    loginScreen.style.display = 'flex';
+                    document.getElementById('loginScreen').style.display = 'flex';
                 }
             } catch(e) {
-                loginScreen.style.display = 'flex';
+                document.getElementById('loginScreen').style.display = 'flex';
             }
         }
-
         checkAuth();
 
-        const inputEl = document.getElementById('query');
-        const form = document.getElementById('form');
-        const chatWrapper = document.getElementById('chat-wrapper');
-        const chatContainer = document.getElementById('chat');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnQuiz = document.getElementById('btnQuiz');
-        const typingIndicator = document.getElementById('typing');
-
-        function adjustTextareaHeight() {
-            inputEl.style.height = 'auto';
-            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + 'px';
-        }
-        inputEl.addEventListener('input', adjustTextareaHeight);
-
-        function scrollToBottom() {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+        // --- TABS ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('view-' + tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
         }
 
-        // Adiciona mensagem vazia do bot que será preenchida via stream
-        function createBotMessageNode() {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = `message-row bot`;
-            
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message bot`;
-            
-            msgDiv.innerHTML = `
-                <div class="bot-identity">
-                    <div class="bot-avatar">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    </div>
-                    Assistente Especializado
-                </div>
-                <div class="message-content"></div>
-            `;
-            
-            rowDiv.appendChild(msgDiv);
-            chatWrapper.appendChild(rowDiv);
-            scrollToBottom();
-            
-            return msgDiv.querySelector('.message-content');
-        }
-
-        function addUserMessage(text) {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = `message-row user`;
-            
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message user`;
-            msgDiv.innerHTML = text.replace(/\n/g, '<br>');
-
-            rowDiv.appendChild(msgDiv);
-            chatWrapper.appendChild(rowDiv);
-            scrollToBottom();
-        }
-
-        inputEl.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if(inputEl.value.trim() !== '') form.dispatchEvent(new Event('submit'));
-            }
-        });
-
-        // Função universal para ler a stream do backend (SSE)
-        async function readStream(response) {
+        // --- STREAMING READER ---
+        async function readStream(response, contentNode, onComplete) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
-            const contentNode = createBotMessageNode();
-            
             let fullText = "";
             let buffer = "";
 
@@ -575,71 +580,71 @@
                 if (done) break;
                 
                 buffer += decoder.decode(value, { stream: true });
-                
-                // Processa linhas SSE
                 const lines = buffer.split('\n\n');
-                // Mantém o último fragmento no buffer se não terminar em \n\n
                 buffer = lines.pop(); 
 
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
-                        const dataStr = line.slice(6);
                         try {
-                            const data = JSON.parse(dataStr);
-                            if (data.error) {
-                                fullText += `\n**Erro:** ${data.error}`;
-                            } else if (data.chunk) {
-                                fullText += data.chunk;
-                            }
+                            const data = JSON.parse(line.slice(6));
+                            if (data.error) fullText += `\n**Erro:** ${data.error}`;
+                            else if (data.chunk) fullText += data.chunk;
                             
-                            // Atualiza e renderiza Markdown em tempo real
                             contentNode.innerHTML = marked.parse(fullText);
-                            scrollToBottom();
+                            if(contentNode.id !== 'quizContent') {
+                                document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+                            }
                         } catch(e) {}
                     }
                 }
             }
+            if(onComplete) onComplete();
         }
 
-        async function generateQuiz() {
-            addUserMessage("Gere um simulado com 3 questões de múltipla escolha para mim.");
-            
-            submitBtn.disabled = true;
-            btnQuiz.disabled = true;
-            typingIndicator.style.display = 'block';
-            
-            try {
-                const response = await fetch('/api/quiz', { method: 'POST' });
-                if (!response.ok) {
-                    if(response.status === 401) window.location.reload();
-                    throw new Error('Erro na API');
-                }
-                
-                typingIndicator.style.display = 'none';
-                await readStream(response);
-                
-            } catch (error) {
-                const contentNode = createBotMessageNode();
-                contentNode.innerHTML = "<p>Erro de conexão ao gerar o simulado.</p>";
-            } finally {
-                submitBtn.disabled = false;
-                btnQuiz.disabled = false;
-                typingIndicator.style.display = 'none';
-                scrollToBottom();
+        // --- CHAT LOGIC ---
+        const inputEl = document.getElementById('query');
+        inputEl.addEventListener('input', () => {
+            inputEl.style.height = 'auto';
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + 'px';
+        });
+
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if(inputEl.value.trim() !== '') document.getElementById('formChat').dispatchEvent(new Event('submit'));
             }
-        }
+        });
 
-        form.addEventListener('submit', async (e) => {
+        document.getElementById('formChat').addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = inputEl.value.trim();
             if (!text) return;
 
-            addUserMessage(text);
+            // Add user msg
+            const userRow = document.createElement('div');
+            userRow.className = 'message-row user';
+            userRow.innerHTML = `<div class="message user">${text.replace(/\n/g, '<br>')}</div>`;
+            document.getElementById('chat-wrapper').appendChild(userRow);
+            
             inputEl.value = '';
             inputEl.style.height = 'auto';
-            submitBtn.disabled = true;
-            btnQuiz.disabled = true;
-            typingIndicator.style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('typingChat').style.display = 'block';
+            document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+
+            // Add bot msg container
+            const botRow = document.createElement('div');
+            botRow.className = 'message-row bot';
+            botRow.innerHTML = `
+                <div class="message bot">
+                    <div class="bot-identity">
+                        <div class="bot-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+                        Tutor Especialista
+                    </div>
+                    <div class="message-content"></div>
+                </div>`;
+            document.getElementById('chat-wrapper').appendChild(botRow);
+            const contentNode = botRow.querySelector('.message-content');
 
             try {
                 const response = await fetch('/api/search', {
@@ -653,19 +658,62 @@
                     throw new Error('Erro na API');
                 }
                 
-                typingIndicator.style.display = 'none';
-                await readStream(response);
+                document.getElementById('typingChat').style.display = 'none';
+                await readStream(response, contentNode);
                 
             } catch (error) {
-                const contentNode = createBotMessageNode();
-                contentNode.innerHTML = "<p>Houve um erro de conexão. Verifique se o backend está rodando.</p>";
+                contentNode.innerHTML = "<p>Houve um erro de conexão.</p>";
             } finally {
-                submitBtn.disabled = false;
-                btnQuiz.disabled = false;
-                typingIndicator.style.display = 'none';
-                scrollToBottom();
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('typingChat').style.display = 'none';
             }
         });
+
+        // --- QUIZ LOGIC ---
+        let selectedQuestions = 5;
+        function selectRadio(element, num) {
+            document.querySelectorAll('.radio-card').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedQuestions = num;
+        }
+
+        async function generateQuiz() {
+            const checkboxes = document.querySelectorAll('.checkbox-grid input[type="checkbox"]:checked');
+            let topics = Array.from(checkboxes).map(cb => cb.value).join(', ');
+            
+            if(!topics) {
+                alert('Selecione pelo menos um assunto!');
+                return;
+            }
+
+            document.getElementById('quizResultArea').classList.add('active');
+            const quizContent = document.getElementById('quizContent');
+            quizContent.innerHTML = '';
+            
+            document.getElementById('btnGenerateQuiz').disabled = true;
+            document.getElementById('typingQuiz').style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/quiz', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ num_questions: selectedQuestions, topics: topics })
+                });
+                if (!response.ok) {
+                    if(response.status === 401) window.location.reload();
+                    throw new Error('Erro na API');
+                }
+                
+                document.getElementById('typingQuiz').style.display = 'none';
+                await readStream(response, quizContent);
+                
+            } catch (error) {
+                quizContent.innerHTML = "<p>Erro de conexão ao gerar o simulado.</p>";
+            } finally {
+                document.getElementById('btnGenerateQuiz').disabled = false;
+                document.getElementById('typingQuiz').style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>

@@ -89,8 +89,13 @@ async def search_knowledge_base(
             
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+class QuizQuery(BaseModel):
+    num_questions: int = 5
+    topics: Optional[str] = None
+
 @app.post("/api/quiz")
 async def generate_quiz(
+    req: QuizQuery,
     db_session = Depends(get_db_session),
     user: dict = Depends(get_current_user)
 ):
@@ -100,8 +105,9 @@ async def generate_quiz(
     async def event_generator():
         try:
             set_retriever(retriever)
-            prompt = """Gere um mini-simulado com 3 questões de múltipla escolha inéditas baseadas nos manuais. 
-            No final de cada questão, coloque o gabarito comentado citando a página."""
+            topic_str = f" sobre os seguintes assuntos: {req.topics}" if req.topics else " gerais sobre todo o material"
+            prompt = f"""Gere um simulado avançado com exatamente {req.num_questions} questões de múltipla escolha inéditas{topic_str}. 
+            O formato deve ser claro, listando as questões primeiro e, ao final, o gabarito comentado detalhado com a citação das páginas."""
             
             initial_state = {"messages": [HumanMessage(content=prompt)]}
             
@@ -119,6 +125,19 @@ async def generate_quiz(
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
             
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+from fastapi import BackgroundTasks
+
+@app.post("/api/admin/ingest")
+async def trigger_ingestion(background_tasks: BackgroundTasks, db_session = Depends(get_db_session)):
+    """Rota para iniciar a ingestão dos PDFs em background no servidor."""
+    from worker.ingestion import run_worker
+    
+    async def run_ingest():
+        await run_worker()
+        
+    background_tasks.add_task(run_ingest)
+    return {"message": "Ingestão iniciada em background no servidor."}
 
 @app.get("/api/knowledge/documents")
 async def list_documents(db_session = Depends(get_db_session)):
