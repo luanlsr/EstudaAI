@@ -411,6 +411,42 @@
             font-style: italic;
         }
 
+        /* Spinner Loader */
+        .spinner-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 0;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .spinner-text {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            animation: pulse 1.5s ease-in-out infinite;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
         /* Trivia Quiz Styles */
         .trivia-question {
             font-size: 1.125rem;
@@ -622,7 +658,10 @@
                     <h2 id="quizProgressTitle">Seu Simulado</h2>
                     <span id="quizScoreDisplay" style="font-weight: 600; color: var(--accent-color);">Pontos: 0</span>
                 </div>
-                <div class="typing-indicator" id="typingQuiz" style="margin-bottom: 20px;">Analisando os PDFs e criando questões inéditas...</div>
+                <div class="spinner-container" id="typingQuiz">
+                    <div class="spinner"></div>
+                    <div class="spinner-text" id="spinnerText">Analisando manuais do CEFS...</div>
+                </div>
                 
                 <div id="quizContent">
                     <!-- Trivia UI goes here -->
@@ -807,6 +846,8 @@
             selectedQuestions = num;
         }
 
+        let loadingInterval;
+
         async function generateQuiz() {
             const checkboxes = document.querySelectorAll('.checkbox-grid input[type="checkbox"]:checked');
             let topics = Array.from(checkboxes).map(cb => cb.value).join(', ');
@@ -824,8 +865,21 @@
             quizContent.innerHTML = '';
             
             document.getElementById('btnGenerateQuiz').disabled = true;
-            document.getElementById('typingQuiz').style.display = 'block';
-            document.getElementById('typingQuiz').textContent = "Analisando os PDFs e criando questões inéditas estruturadas... (isso pode levar uns 15-30 segundos)";
+            document.getElementById('typingQuiz').style.display = 'flex';
+            
+            const loadingTexts = [
+                "Lendo os manuais do CEFS...",
+                "Cruzando dados com jurisprudências e regulamentos...",
+                "A inteligência artificial está elaborando questões inéditas...",
+                "Formatando as opções de múltipla escolha...",
+                "Ajustando o gabarito... Quase lá!"
+            ];
+            let textIdx = 0;
+            document.getElementById('spinnerText').textContent = loadingTexts[textIdx];
+            loadingInterval = setInterval(() => {
+                textIdx = (textIdx + 1) % loadingTexts.length;
+                document.getElementById('spinnerText').textContent = loadingTexts[textIdx];
+            }, 3500);
             
             currentScore = 0;
             document.getElementById('quizScoreDisplay').textContent = `Pontos: 0`;
@@ -854,6 +908,7 @@
                 quizContent.innerHTML = "<p>Erro de conexão ao gerar o simulado.</p>";
                 document.querySelector('.quiz-config-card').style.display = 'block';
             } finally {
+                clearInterval(loadingInterval);
                 document.getElementById('btnGenerateQuiz').disabled = false;
             }
         }
