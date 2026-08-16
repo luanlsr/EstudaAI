@@ -1,6 +1,6 @@
 # 🚂 Manual Completo de Deploy no Railway
 
-Este manual apresenta o passo a passo exato para você colocar o **EstudaIA** no ar gratuitamente usando a infraestrutura do Railway. 
+Este manual apresenta o passo a passo exato para você colocar o **EstudaAI** no ar gratuitamente usando a infraestrutura do Railway. 
 
 Como o nosso projeto tem banco de dados vetorial (`pgvector`), cache (`Redis`) e uma API robusta (`FastAPI`), o Railway é a plataforma ideal, pois provisiona tudo no mesmo ambiente.
 
@@ -34,7 +34,7 @@ O projeto também usa Redis (presente no `docker-compose.yml`).
 Agora vamos subir o "cérebro" do projeto.
 1. No mesmo painel do projeto, clique novamente em **New** ou **+**.
 2. Escolha **GitHub Repo**.
-3. Selecione o repositório do **EstudaIA** na lista. (Se não aparecer, clique em "Configure GitHub App" e dê permissão para o Railway ver seus repositórios).
+3. Selecione o repositório do **EstudaAI** na lista. (Se não aparecer, clique em "Configure GitHub App" e dê permissão para o Railway ver seus repositórios).
 4. Clique em **Deploy Now**. 
 5. O contêiner da nossa API vai aparecer na tela. O Railway vai começar a compilar o nosso `Dockerfile` automaticamente.
 

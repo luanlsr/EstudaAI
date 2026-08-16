@@ -1,6 +1,6 @@
-# EstudaIA - Plataforma de Conhecimento RAG
+# EstudaAI - Plataforma de Conhecimento RAG
 
-O **EstudaIA** é uma plataforma inteligente voltada para simulação, estudos e resolução de provas (como o CEFS), utilizando a arquitetura RAG (Retrieval-Augmented Generation). Ela responde perguntas do usuário **estritamente com base em documentos oficiais** (apostilas, manuais e legislações). A Inteligência Artificial do projeto tem travas para não "inventar" dados, garantindo rastreabilidade das respostas com citação da fonte e da página correspondente.
+O **EstudaAI** é uma plataforma inteligente voltada para simulação, estudos e resolução de provas (como o CEFS), utilizando a arquitetura RAG (Retrieval-Augmented Generation). Ela responde perguntas do usuário **estritamente com base em documentos oficiais** (apostilas, manuais e legislações). A Inteligência Artificial do projeto tem travas para não "inventar" dados, garantindo rastreabilidade das respostas com citação da fonte e da página correspondente.
 
 ## 🚀 Tecnologias
 

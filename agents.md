@@ -1,6 +1,6 @@
-# Ecossistema de Agentes - EstudaIA
+# Ecossistema de Agentes - EstudaAI
 
-A arquitetura do EstudaIA foi concebida para isolar responsabilidades e criar fluxos inteligentes usando **LangGraph**. A premissa central de segurança do projeto é que **os Agentes NÃO acessam o banco de dados diretamente**; eles obrigatoriamente utilizam *Tools (Skills)* expostas por uma camada restrita de serviços (`Knowledge Service`).
+A arquitetura do EstudaAI foi concebida para isolar responsabilidades e criar fluxos inteligentes usando **LangGraph**. A premissa central de segurança do projeto é que **os Agentes NÃO acessam o banco de dados diretamente**; eles obrigatoriamente utilizam *Tools (Skills)* expostas por uma camada restrita de serviços (`Knowledge Service`).
 
 ---
 
