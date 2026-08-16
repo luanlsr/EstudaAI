@@ -1086,8 +1086,6 @@
             selectedQuestions = num;
         }
 
-        let loadingInterval;
-
         async function generateQuiz() {
             const checkboxes = document.querySelectorAll('.checkbox-grid input[type="checkbox"]:checked');
             let topics = Array.from(checkboxes).map(cb => cb.value).join(', ');
