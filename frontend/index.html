@@ -537,6 +537,10 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     Simulados
                 </div>
+                <div class="tab" onclick="switchTab('ranking', this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                    Ranking
+                </div>
             </div>
         </div>
 
@@ -634,6 +638,18 @@
         </div>
     </main>
 
+    <!-- ABA 3: RANKING -->
+    <main class="view-section" id="view-ranking">
+        <div class="quiz-container">
+            <div class="ranking-card" style="display: block; margin-top: 0;">
+                <h2 style="text-align: center; margin-bottom: 24px; font-size: 1.5rem;">🏆 Pódio Global CEFS</h2>
+                <ul class="ranking-list" id="globalRankingList">
+                    <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando pódio...</div>
+                </ul>
+            </div>
+        </div>
+    </main>
+
     <script>
         // --- AUTH ---
         async function checkAuth() {
@@ -668,9 +684,13 @@
             if (clickedElement) {
                 clickedElement.classList.add('active');
             } else {
-                // If called programmatically (like from checkAuth), just activate the right tab by default
                 if(tabName === 'chat') document.querySelector('.tab:nth-child(1)').classList.add('active');
                 if(tabName === 'quiz') document.querySelector('.tab:nth-child(2)').classList.add('active');
+                if(tabName === 'ranking') document.querySelector('.tab:nth-child(3)').classList.add('active');
+            }
+
+            if (tabName === 'ranking') {
+                loadGlobalRanking();
             }
         }
 
@@ -929,30 +949,53 @@
             } catch(e) { console.error(e); }
         }
 
-        function renderRanking(ranking) {
-            const rankingArea = document.getElementById('rankingArea');
-            const rankingList = document.getElementById('rankingList');
+        function renderRanking(ranking, targetElementId = 'rankingList') {
+            const rankingList = document.getElementById(targetElementId);
             rankingList.innerHTML = '';
             
+            if(ranking.length === 0) {
+                rankingList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum simulado finalizado ainda. Seja o primeiro!</div>';
+                if(targetElementId === 'rankingList') document.getElementById('rankingArea').style.display = 'block';
+                return;
+            }
+
             ranking.forEach((u, idx) => {
                 let medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx+1}º`;
-                let pic = u.picture ? `<img src="${u.picture}" style="width: 24px; height: 24px; border-radius: 50%;">` : '👤';
+                let pic = u.picture ? `<img src="${u.picture}" style="width: 32px; height: 32px; border-radius: 50%; box-shadow: var(--shadow-sm);">` : '👤';
+                let rowBg = idx < 3 ? 'background-color: #f8fafc;' : '';
+                let medalSize = idx < 3 ? 'font-size: 1.5rem;' : 'font-size: 1rem; color: var(--text-muted);';
                 
                 rankingList.innerHTML += `
-                    <li class="ranking-item">
-                        <div style="display: flex; align-items: center; gap: 12px; font-weight: 500;">
-                            <span style="width: 24px; text-align: center;">${medal}</span>
+                    <li class="ranking-item" style="padding: 16px; border-radius: 8px; margin-bottom: 8px; ${rowBg}">
+                        <div style="display: flex; align-items: center; gap: 16px; font-weight: 500; font-size: 1.05rem;">
+                            <span style="width: 32px; text-align: center; display: inline-block; ${medalSize}">${medal}</span>
                             ${pic}
                             ${u.name}
                         </div>
-                        <div style="font-weight: 600; color: var(--accent-color);">
-                            ${u.score} pts <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(${u.games_played} jogos)</span>
+                        <div style="font-weight: 700; color: var(--accent-color); font-size: 1.1rem; text-align: right;">
+                            ${u.score} pts
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 4px;">(${u.games_played} jogos)</div>
                         </div>
                     </li>
                 `;
             });
             
-            rankingArea.style.display = 'block';
+            if(targetElementId === 'rankingList') {
+                document.getElementById('rankingArea').style.display = 'block';
+            }
+        }
+
+        async function loadGlobalRanking() {
+            try {
+                const res = await fetch('/api/ranking');
+                if (res.ok) {
+                    const ranking = await res.json();
+                    renderRanking(ranking, 'globalRankingList');
+                }
+            } catch(e) {
+                console.error("Erro ao carregar o ranking global:", e);
+                document.getElementById('globalRankingList').innerHTML = '<div style="text-align: center; color: #ef4444; padding: 20px;">Erro ao conectar com o placar.</div>';
+            }
         }
 
         function resetQuiz() {
