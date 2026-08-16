@@ -26,8 +26,16 @@ async def get_db_session():
         yield session
 
 from fastapi.middleware.cors import CORSMiddleware
+from infrastructure.database.models import Base
+from sqlalchemy import text
 
 app = FastAPI(title="Knowledge Platform API", version="1.0")
+
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        await conn.run_sync(Base.metadata.create_all)
 
 app.add_middleware(
     CORSMiddleware,
