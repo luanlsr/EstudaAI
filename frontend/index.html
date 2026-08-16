@@ -770,43 +770,7 @@
         </div>
     </div>
     
-    <!-- Onboarding Screen -->
-    <div class="onboarding-screen" id="onboardingScreen">
-        <div class="onboarding-box">
-            <h2>Qual é o seu Posto ou Graduação?</h2>
-            <p style="color: var(--text-secondary); margin-top: 8px;">Para personalizar a sua experiência no CEFS, informe seu grau hierárquico na PMERJ.</p>
-            
-            <select id="userRank" class="rank-select">
-                <option value="" disabled selected>Selecione seu posto/graduação...</option>
-                <optgroup label="Oficiais Superiores">
-                    <option value="Cel PM">Coronel (Cel PM)</option>
-                    <option value="Ten Cel PM">Tenente-Coronel (Ten Cel PM)</option>
-                    <option value="Maj PM">Major (Maj PM)</option>
-                </optgroup>
-                <optgroup label="Oficiais Intermediários">
-                    <option value="Cap PM">Capitão (Cap PM)</option>
-                </optgroup>
-                <optgroup label="Oficiais Subalternos">
-                    <option value="1º Ten PM">Primeiro-Tenente (1º Ten PM)</option>
-                    <option value="2º Ten PM">Segundo-Tenente (2º Ten PM)</option>
-                </optgroup>
-                <optgroup label="Praças Especiais">
-                    <option value="Asp Of PM">Aspirante a Oficial (Asp Of PM)</option>
-                    <option value="Cadete PM">Cadete (Cadete PM)</option>
-                </optgroup>
-                <optgroup label="Praças">
-                    <option value="Subten PM">Subtenente (Subten PM)</option>
-                    <option value="1º Sgt PM">Primeiro-Sargento (1º Sgt PM)</option>
-                    <option value="2º Sgt PM">Segundo-Sargento (2º Sgt PM)</option>
-                    <option value="3º Sgt PM">Terceiro-Sargento (3º Sgt PM)</option>
-                    <option value="Cb PM">Cabo (Cb PM)</option>
-                    <option value="Sd PM">Soldado (Sd PM)</option>
-                </optgroup>
-            </select>
-            
-            <button onclick="saveRank()" class="btn-primary" style="width: 100%;" id="saveRankBtn">Salvar e Entrar</button>
-        </div>
-    </div>
+
 
     <!-- App Principal -->
     <header class="header" id="appHeader" style="display: none;">
@@ -1008,22 +972,6 @@
             } finally { btn.disabled = false; btn.textContent = 'Criar Conta'; }
         }
 
-        async function saveRank() {
-            const rank = document.getElementById('userRank').value;
-            if(!rank) return alert('Por favor, selecione seu posto ou graduação.');
-            const btn = document.getElementById('saveRankBtn');
-            btn.disabled = true; btn.textContent = 'Salvando...';
-            
-            try {
-                const res = await fetch('/api/user/rank', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({rank})
-                });
-                if(res.ok) { window.location.reload(); }
-            } catch(e) { alert('Erro ao salvar.'); btn.disabled = false; btn.textContent = 'Salvar e Entrar'; }
-        }
-
         const insigniaMap = {
             "Sd PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-sd2.png",
             "Cb PM": "https://sepm.rj.gov.br/wp-content/uploads/2014/08/divisa-cabo2.png",
@@ -1054,20 +1002,13 @@
                     const data = await res.json();
                     currentUser = data;
                     
-                    if (!data.rank) {
-                        document.getElementById('loginScreen').style.display = 'none';
-                        document.getElementById('onboardingScreen').style.display = 'flex';
-                        return;
-                    }
-                    
                     document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('onboardingScreen').style.display = 'none';
                     
-                    const picUrl = data.picture || getInsigniaUrl(data.rank);
+                    const picUrl = data.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=0f172a&color=fff&bold=true`;
                     document.getElementById('userPicture').src = picUrl;
                     document.getElementById('userPicture').style.display = 'block';
                     
-                    const displayName = `${data.rank} ${data.name.split(' ')[0]}`;
+                    const displayName = data.name.split(' ')[0];
                     document.getElementById('userName').textContent = displayName;
                     document.getElementById('appHeader').style.display = 'flex';
                     switchTab('chat');

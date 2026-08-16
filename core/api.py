@@ -71,8 +71,6 @@ class LoginPayload(BaseModel):
     email: str
     password: str
 
-class RankPayload(BaseModel):
-    rank: str
 
 @app.post("/api/auth/register")
 async def register_user(payload: RegisterPayload, db_session: AsyncSession = Depends(get_db_session)):
@@ -123,28 +121,6 @@ async def get_my_user(db_session: AsyncSession = Depends(get_db_session), curren
         return {"email": current_user["sub"], "name": current_user.get("name", "Aluno"), "rank": None, "picture": current_user.get("picture")}
     return {"email": user.user_email, "name": user.user_name, "rank": user.rank, "picture": user.user_picture}
 
-@app.post("/api/user/rank")
-async def update_rank(payload: RankPayload, db_session: AsyncSession = Depends(get_db_session), current_user: dict = Depends(get_current_user)):
-    query = select(UserScore).where(UserScore.user_email == current_user["sub"])
-    result = await db_session.execute(query)
-    user = result.scalars().first()
-    if user:
-        user.rank = payload.rank
-        await db_session.commit()
-        return {"message": "Posto/Graduação atualizado!"}
-    
-    # Se o usuário não existir ainda, cria
-    new_user = UserScore(
-        user_email=current_user["sub"],
-        user_name=current_user.get("name", "Aluno"),
-        user_picture=current_user.get("picture", ""),
-        rank=payload.rank,
-        score=0,
-        games_played=0
-    )
-    db_session.add(new_user)
-    await db_session.commit()
-    return {"message": "Posto/Graduação salvo com sucesso!"}
 
 embedding_provider = OpenAIEmbeddingProvider()
 research_agent = create_research_agent()
