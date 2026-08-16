@@ -14,7 +14,7 @@ import os
 import hashlib
 import base64
 
-from passlib.context import CryptContext
+import bcrypt
 from core.auth import auth_router, get_current_user, get_current_user_optional, SECRET_KEY, ALGORITHM
 from jose import jwt
 from datetime import timedelta, datetime
@@ -62,7 +62,7 @@ app.add_middleware(
 # Inclui as rotas de autenticação
 app.include_router(auth_router)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 class RegisterPayload(BaseModel):
     name: str
@@ -89,7 +89,8 @@ async def register_user(payload: RegisterPayload, db_session: AsyncSession = Dep
         if result.scalars().first():
             raise HTTPException(status_code=400, detail="Email já cadastrado.")
             
-        hashed = pwd_context.hash(get_safe_password(payload.password))
+        pwd_bytes = get_safe_password(payload.password).encode('utf-8')
+        hashed = bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
         new_user = UserScore(
             user_email=payload.email,
             user_name=payload.name,
@@ -111,7 +112,12 @@ async def login_user(payload: LoginPayload, response: Response, db_session: Asyn
     result = await db_session.execute(query)
     user = result.scalars().first()
     
-    if not user or not user.password_hash or not pwd_context.verify(get_safe_password(payload.password), user.password_hash):
+    if not user or not user.password_hash:
+        raise HTTPException(status_code=401, detail="Email ou senha incorretos.")
+        
+    pwd_bytes = get_safe_password(payload.password).encode('utf-8')
+    hash_bytes = user.password_hash.encode('utf-8')
+    if not bcrypt.checkpw(pwd_bytes, hash_bytes):
         raise HTTPException(status_code=401, detail="Email ou senha incorretos.")
         
     expire = datetime.utcnow() + timedelta(days=7)
