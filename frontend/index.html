@@ -49,7 +49,8 @@
             height: 64px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 0 24px;
             border-bottom: 1px solid var(--border-color);
             background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(8px);
@@ -57,7 +58,7 @@
             flex-shrink: 0;
         }
 
-        .header h1 {
+        .header-logo {
             font-size: 1.125rem;
             font-weight: 600;
             letter-spacing: -0.025em;
@@ -67,14 +68,118 @@
             gap: 8px;
         }
 
-        .header h1 svg {
+        .header-logo svg {
             color: #4f46e5;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-quiz {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .btn-quiz:hover {
+            background-color: #e2e8f0;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .user-profile img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .btn-logout {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-left: 8px;
+        }
+        
+        .btn-logout:hover {
+            text-decoration: underline;
+            color: #ef4444;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-body);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .login-box {
+            text-align: center;
+            max-width: 400px;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .login-box h2 {
+            margin-bottom: 16px;
+            font-size: 1.5rem;
+        }
+        
+        .login-box p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 0.9375rem;
+        }
+
+        .btn-google {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background-color: white;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            text-decoration: none;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+            transition: background-color 0.2s;
+        }
+
+        .btn-google:hover {
+            background-color: #f8f9fa;
         }
 
         /* Main Chat Area */
         .main-content {
             flex: 1;
-            display: flex;
+            display: none; /* Oculto até autenticar */
             flex-direction: column;
             position: relative;
             align-items: center;
@@ -132,11 +237,10 @@
         .message.bot {
             background-color: var(--bot-msg-bg);
             border-bottom-left-radius: 4px;
-            padding-left: 0; /* Minimal bot style, no box */
+            padding-left: 0;
             max-width: 100%;
         }
 
-        /* Bot Identity Marker */
         .bot-identity {
             display: flex;
             align-items: center;
@@ -157,10 +261,8 @@
             color: white;
         }
 
-        /* Markdown Styles inside bot message */
         .message-content p { margin-bottom: 12px; }
         .message-content p:last-child { margin-bottom: 0; }
-        
         .message-content strong { font-weight: 600; }
         
         .message-content h3 {
@@ -189,7 +291,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Input Area */
         .input-wrapper {
             width: 100%;
             padding: 24px;
@@ -258,10 +359,6 @@
             transform: translateY(-1px);
         }
 
-        button.send-btn:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-
         button.send-btn:disabled {
             background-color: #f1f5f9;
             color: #cbd5e1;
@@ -276,49 +373,63 @@
             font-style: italic;
         }
 
-        .typing-indicator span {
-            display: inline-block;
-            animation: blink 1.4s infinite both;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes blink {
-            0% { opacity: 0.2; }
-            20% { opacity: 1; }
-            100% { opacity: 0.2; }
+        /* Loading Spinner */
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-left-color: #0f172a;
+            animation: spin 1s linear infinite;
         }
-
-        /* Mobile Adjustments */
-        @media (max-width: 768px) {
-            .chat-container { padding: 24px 16px; }
-            .input-wrapper { padding: 16px; }
-            .message { max-width: 92%; }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <h1>
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h2>Bem-vindo ao EstudaAI</h2>
+            <p>Faça login para acessar o assistente e os simulados do CEFS.</p>
+            <a href="/auth/google/login" class="btn-google">
+                <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                Entrar com o Google
+            </a>
+        </div>
+    </div>
+
+    <!-- App Principal -->
+    <header class="header" id="appHeader" style="display: none;">
+        <div class="header-logo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                 <path d="M2 17l10 5 10-5"></path>
                 <path d="M2 12l10 5 10-5"></path>
             </svg>
             EstudaAI
-        </h1>
+        </div>
+        <div class="header-controls">
+            <button class="btn-quiz" id="btnQuiz" onclick="generateQuiz()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Gerar Simulado
+            </button>
+            <div class="user-profile" id="userProfile">
+                <img id="userPicture" src="" alt="Avatar" style="display:none;">
+                <span id="userName"></span>
+                <a href="/auth/google/logout" class="btn-logout">Sair</a>
+            </div>
+        </div>
     </header>
 
-    <main class="main-content">
+    <main class="main-content" id="mainContent">
         <div class="chat-container" id="chat">
             <div class="chat-wrapper" id="chat-wrapper">
-                <!-- Mensagem Inicial -->
                 <div class="message-row bot">
                     <div class="message bot">
                         <div class="bot-identity">
@@ -331,14 +442,14 @@
                         </div>
                         <div class="message-content">
                             <p><strong>Olá! Sou o seu tutor de estudos focado nos documentos e leis oficiais.</strong></p>
-                            <p>Como posso te ajudar hoje? Envie uma questão de simulado ou uma dúvida sobre o material de estudo.</p>
+                            <p>Como posso te ajudar hoje? Envie uma dúvida ou clique no botão acima para gerar um simulado de questões inéditas.</p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="chat-wrapper">
                 <div class="typing-indicator" id="typing">
-                    Consultando a base de documentos<span>.</span><span>.</span><span>.</span>
+                    Consultando a base de documentos e raciocinando...
                 </div>
             </div>
         </div>
@@ -357,54 +468,90 @@
     </main>
 
     <script>
+        const loginScreen = document.getElementById('loginScreen');
+        const mainContent = document.getElementById('mainContent');
+        const appHeader = document.getElementById('appHeader');
+        
+        // Verificar autenticação
+        async function checkAuth() {
+            try {
+                const res = await fetch('/auth/google/me');
+                if (res.ok) {
+                    const user = await res.json();
+                    document.getElementById('userName').textContent = user.name.split(' ')[0];
+                    if(user.picture) {
+                        document.getElementById('userPicture').src = user.picture;
+                        document.getElementById('userPicture').style.display = 'block';
+                    }
+                    
+                    loginScreen.style.display = 'none';
+                    mainContent.style.display = 'flex';
+                    appHeader.style.display = 'flex';
+                } else {
+                    // Sessão inválida ou sem login
+                    loginScreen.style.display = 'flex';
+                }
+            } catch(e) {
+                loginScreen.style.display = 'flex';
+            }
+        }
+
+        checkAuth();
+
         const inputEl = document.getElementById('query');
         const form = document.getElementById('form');
         const chatWrapper = document.getElementById('chat-wrapper');
         const chatContainer = document.getElementById('chat');
         const submitBtn = document.getElementById('submitBtn');
+        const btnQuiz = document.getElementById('btnQuiz');
         const typingIndicator = document.getElementById('typing');
 
-        // Auto-resize textarea
         function adjustTextareaHeight() {
             inputEl.style.height = 'auto';
             inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + 'px';
         }
         inputEl.addEventListener('input', adjustTextareaHeight);
 
-        function addMessage(text, isUser = false) {
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Adiciona mensagem vazia do bot que será preenchida via stream
+        function createBotMessageNode() {
             const rowDiv = document.createElement('div');
-            rowDiv.className = `message-row ${isUser ? 'user' : 'bot'}`;
+            rowDiv.className = `message-row bot`;
             
             const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            msgDiv.className = `message bot`;
             
-            if (isUser) {
-                // Preservar quebras de linha para usuário
-                msgDiv.innerHTML = text.replace(/\n/g, '<br>');
-            } else {
-                // Template moderno para o bot com avatar
-                msgDiv.innerHTML = `
-                    <div class="bot-identity">
-                        <div class="bot-avatar">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        Assistente Especializado
+            msgDiv.innerHTML = `
+                <div class="bot-identity">
+                    <div class="bot-avatar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                     </div>
-                    <div class="message-content">
-                        ${marked.parse(text)}
-                    </div>
-                `;
-            }
+                    Assistente Especializado
+                </div>
+                <div class="message-content"></div>
+            `;
+            
+            rowDiv.appendChild(msgDiv);
+            chatWrapper.appendChild(rowDiv);
+            scrollToBottom();
+            
+            return msgDiv.querySelector('.message-content');
+        }
+
+        function addUserMessage(text) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = `message-row user`;
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message user`;
+            msgDiv.innerHTML = text.replace(/\n/g, '<br>');
 
             rowDiv.appendChild(msgDiv);
             chatWrapper.appendChild(rowDiv);
             scrollToBottom();
-        }
-
-        function scrollToBottom() {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         inputEl.addEventListener('keydown', function(e) {
@@ -414,40 +561,107 @@
             }
         });
 
+        // Função universal para ler a stream do backend (SSE)
+        async function readStream(response) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            const contentNode = createBotMessageNode();
+            
+            let fullText = "";
+            let buffer = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                
+                // Processa linhas SSE
+                const lines = buffer.split('\n\n');
+                // Mantém o último fragmento no buffer se não terminar em \n\n
+                buffer = lines.pop(); 
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6);
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.error) {
+                                fullText += `\n**Erro:** ${data.error}`;
+                            } else if (data.chunk) {
+                                fullText += data.chunk;
+                            }
+                            
+                            // Atualiza e renderiza Markdown em tempo real
+                            contentNode.innerHTML = marked.parse(fullText);
+                            scrollToBottom();
+                        } catch(e) {}
+                    }
+                }
+            }
+        }
+
+        async function generateQuiz() {
+            addUserMessage("Gere um simulado com 3 questões de múltipla escolha para mim.");
+            
+            submitBtn.disabled = true;
+            btnQuiz.disabled = true;
+            typingIndicator.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/quiz', { method: 'POST' });
+                if (!response.ok) {
+                    if(response.status === 401) window.location.reload();
+                    throw new Error('Erro na API');
+                }
+                
+                typingIndicator.style.display = 'none';
+                await readStream(response);
+                
+            } catch (error) {
+                const contentNode = createBotMessageNode();
+                contentNode.innerHTML = "<p>Erro de conexão ao gerar o simulado.</p>";
+            } finally {
+                submitBtn.disabled = false;
+                btnQuiz.disabled = false;
+                typingIndicator.style.display = 'none';
+                scrollToBottom();
+            }
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = inputEl.value.trim();
             if (!text) return;
 
-            addMessage(text, true);
+            addUserMessage(text);
             inputEl.value = '';
             inputEl.style.height = 'auto';
             submitBtn.disabled = true;
+            btnQuiz.disabled = true;
             typingIndicator.style.display = 'block';
-            scrollToBottom();
 
             try {
-                // O código fará uma requisição para a API local ou proxy configurado
                 const response = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: text, top_k: 5 })
                 });
 
-                if (!response.ok) throw new Error('Erro na API');
-                
-                const data = await response.json();
-                
-                if (data && data.answer) {
-                    addMessage(data.answer, false);
-                } else {
-                    addMessage("Não foi possível gerar uma resposta no momento.", false);
+                if (!response.ok) {
+                    if(response.status === 401) window.location.reload();
+                    throw new Error('Erro na API');
                 }
                 
+                typingIndicator.style.display = 'none';
+                await readStream(response);
+                
             } catch (error) {
-                addMessage("Houve um erro de conexão. Verifique se o backend está rodando.", false);
+                const contentNode = createBotMessageNode();
+                contentNode.innerHTML = "<p>Houve um erro de conexão. Verifique se o backend está rodando.</p>";
             } finally {
                 submitBtn.disabled = false;
+                btnQuiz.disabled = false;
                 typingIndicator.style.display = 'none';
                 scrollToBottom();
             }

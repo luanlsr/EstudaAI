@@ -12,3 +12,6 @@ langchain-text-splitters
 pydantic
 asyncpg
 langchain-openai
+fastapi-sso
+python-jose[cryptography]
+itsdangerous

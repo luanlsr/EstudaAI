@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -11,6 +11,8 @@ from core.skills import set_retriever
 from core.agent import create_research_agent
 from langchain_core.messages import HumanMessage
 import os
+
+from core.auth import auth_router, get_current_user
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:password@db:5432/knowledge")
 if DATABASE_URL.startswith("postgresql://"):
@@ -27,18 +29,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Knowledge Platform API", version="1.0")
 
-# Permitir requisições de outros domínios (ex: Vercel)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, pode restringir para o domínio do Vercel
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-embedding_provider = OpenAIEmbeddingProvider()
+# Inclui as rotas de autenticação
+app.include_router(auth_router)
 
-# Compila o agente do LangGraph
+embedding_provider = OpenAIEmbeddingProvider()
 research_agent = create_research_agent()
 
 os.makedirs("frontend", exist_ok=True)
@@ -52,38 +54,72 @@ class SearchQuery(BaseModel):
     query: str
     top_k: Optional[int] = 5
 
-class AgentResponse(BaseModel):
-    answer: str
-
-@app.post("/api/search", response_model=AgentResponse)
+@app.post("/api/search")
 async def search_knowledge_base(
     req: SearchQuery, 
-    db_session = Depends(get_db_session)
+    db_session = Depends(get_db_session),
+    user: dict = Depends(get_current_user) # Exige login!
 ):
-    try:
-        # Inicializa o retriever real para essa sessão de DB
-        retriever = HybridRetriever(db_session=db_session, embedding_provider=embedding_provider)
-        
-        # Injeta globalmente para a tool conseguir usar
-        set_retriever(retriever)
-        
-        # Invoca o LangGraph
-        initial_state = {"messages": [HumanMessage(content=req.query)]}
-        final_state = await research_agent.ainvoke(initial_state)
-        
-        # A última mensagem é a resposta do Agente (AI)
-        ai_msg = final_state["messages"][-1].content
-        
-        return {"answer": ai_msg}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Retorna a resposta do LLM via Server-Sent Events (SSE) para efeito de digitação."""
+    retriever = HybridRetriever(db_session=db_session, embedding_provider=embedding_provider)
+    
+    async def event_generator():
+        try:
+            set_retriever(retriever)
+            initial_state = {"messages": [HumanMessage(content=req.query)]}
+            
+            # Usando astream_events do LangGraph para capturar o streaming do modelo
+            async for event in research_agent.astream_events(initial_state, version="v2"):
+                kind = event["event"]
+                # Filtra apenas o stream de texto gerado pelo chat model (ignorando chamadas de tool)
+                if kind == "on_chat_model_stream":
+                    chunk = event["data"]["chunk"]
+                    if chunk.content:
+                        # Substitui quebras de linha para o formato SSE (Server-Sent Events)
+                        # Em SSE, dados são mandados como "data: conteúdo\n\n"
+                        # Mas como o conteúdo pode ter \n, nós encodamos para mandar seguro
+                        import json
+                        yield f"data: {json.dumps({'chunk': chunk.content})}\n\n"
+            
+            # Envia um evento finalizando a stream
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            import json
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@app.post("/api/quiz")
+async def generate_quiz(
+    db_session = Depends(get_db_session),
+    user: dict = Depends(get_current_user)
+):
+    """Gera um simulado automaticamente."""
+    retriever = HybridRetriever(db_session=db_session, embedding_provider=embedding_provider)
+    
+    async def event_generator():
+        try:
+            set_retriever(retriever)
+            prompt = """Gere um mini-simulado com 3 questões de múltipla escolha inéditas baseadas nos manuais. 
+            No final de cada questão, coloque o gabarito comentado citando a página."""
+            
+            initial_state = {"messages": [HumanMessage(content=prompt)]}
+            
+            async for event in research_agent.astream_events(initial_state, version="v2"):
+                kind = event["event"]
+                if kind == "on_chat_model_stream":
+                    chunk = event["data"]["chunk"]
+                    if chunk.content:
+                        import json
+                        yield f"data: {json.dumps({'chunk': chunk.content})}\n\n"
+            
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            import json
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.get("/api/knowledge/documents")
 async def list_documents(db_session = Depends(get_db_session)):
-    # Simulação da busca de documentos
-    # docs = await db_session.execute(select(Document))
-    return [
-        {"id": "doc1", "title": "Manual Principal", "version": "v1"}
-    ]
-
-# Para rodar o servidor: uvicorn core.api:app --reload
+    return [{"id": "doc1", "title": "Manual Principal", "version": "v1"}]
