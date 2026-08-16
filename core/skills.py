@@ -1,12 +1,12 @@
 from langchain_core.tools import tool
 from typing import Dict, Any, List
+import contextvars
 
-# Dependência fictícia do retriever globalmente acessível para as tools
-_global_retriever = None
+# Variável de contexto (async-safe) para lidar com milhares de requisições simultâneas sem misturar dados
+_retriever_context = contextvars.ContextVar('retriever')
 
 def set_retriever(retriever):
-    global _global_retriever
-    _global_retriever = retriever
+    _retriever_context.set(retriever)
 
 @tool
 async def search_knowledge(query: str, top_k: int = 3) -> str:
@@ -14,10 +14,11 @@ async def search_knowledge(query: str, top_k: int = 3) -> str:
     Pesquisa na Base de Conhecimento oficial por informações relevantes para responder à pergunta do usuário.
     Use sempre esta tool para embasar fatos.
     """
-    if _global_retriever is None:
+    retriever = _retriever_context.get(None)
+    if retriever is None:
         return "Erro: Retriever não configurado."
     
-    results = await _global_retriever.search(query, top_k)
+    results = await retriever.search(query, top_k)
     
     if not results:
         return "Não foi encontrada evidência suficiente na documentação oficial."
