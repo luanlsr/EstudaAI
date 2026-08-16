@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from worker.parser import PyMuPDFParser
 from worker.chunker import Chunker
-from infrastructure.embeddings.provider import MockEmbeddingProvider
+from infrastructure.embeddings.provider import OpenAIEmbeddingProvider
 from infrastructure.database.models import Document, Page, Chunk
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5432/knowledge")
@@ -25,7 +25,7 @@ class IngestionPipeline:
     
     def __init__(self, db_session: AsyncSession):
         self.chunker = Chunker()
-        self.embedding_provider = MockEmbeddingProvider()
+        self.embedding_provider = OpenAIEmbeddingProvider()
         self.db_session = db_session
 
     def get_file_hash(self, file_path: str) -> str:
@@ -109,20 +109,24 @@ class IngestionPipeline:
 
 async def run_worker():
     print("Iniciando Worker de Ingestão...")
-    pdf_path = "docs/APOSTILA COMPLETA CEFS 2026.pdf"
-    
-    if not os.path.exists(pdf_path):
-        print(f"Erro: Arquivo {pdf_path} não encontrado na pasta local.")
-        return
+    pdf_paths = [
+        ("cefs-2026-p1", "docs/APOSTILA COMPLETA CEFS 2026.pdf"),
+        ("cefs-2026-p2", "docs/ilovepdf_merged_compressed.pdf")
+    ]
 
     async with AsyncSessionLocal() as session:
         pipeline = IngestionPipeline(session)
-        await pipeline.process_document(
-            document_id="cefs-2026",
-            file_path=pdf_path,
-            kb_version="v1",
-            document_version="1.0"
-        )
+        for doc_id, pdf_path in pdf_paths:
+            if not os.path.exists(pdf_path):
+                print(f"Erro: Arquivo {pdf_path} não encontrado na pasta local.")
+                continue
+
+            await pipeline.process_document(
+                document_id=doc_id,
+                file_path=pdf_path,
+                kb_version="v1",
+                document_version="1.0"
+            )
 
 if __name__ == "__main__":
     asyncio.run(run_worker())

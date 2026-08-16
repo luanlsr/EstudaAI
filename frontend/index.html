@@ -648,6 +648,10 @@
                         <label class="checkbox-label"><input type="checkbox" value="Legislação Institucional (Estatuto/Regulamento)"> Legislação Institucional</label>
                         <label class="checkbox-label"><input type="checkbox" value="Procedimentos Operacionais Padrão (POP)"> POP / Prática Operacional</label>
                     </div>
+                    <div style="margin-top: 16px;">
+                        <label style="font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 8px; display: block;">Ou pesquise um assunto específico (A IA vai procurar em todos os manuais):</label>
+                        <input type="text" id="customTopicInput" placeholder="Ex: Regras de Continência, Uso de Algemas, etc." style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9375rem; outline: none; font-family: inherit;">
+                    </div>
                 </div>
 
                 <button class="btn-generate" id="btnGenerateQuiz" onclick="generateQuiz()">Gerar Simulado Agora</button>
@@ -852,8 +856,13 @@
             const checkboxes = document.querySelectorAll('.checkbox-grid input[type="checkbox"]:checked');
             let topics = Array.from(checkboxes).map(cb => cb.value).join(', ');
             
+            const customTopic = document.getElementById('customTopicInput').value.trim();
+            if (customTopic) {
+                topics = topics ? topics + ', ' + customTopic : customTopic;
+            }
+            
             if(!topics) {
-                alert('Selecione pelo menos um assunto!');
+                alert('Selecione ou digite pelo menos um assunto!');
                 return;
             }
 

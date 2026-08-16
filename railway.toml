@@ -3,4 +3,5 @@ builder = "NIXPACKS"
 buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-releaseCommand = "alembic upgrade head"
+releaseCommand = "python -m worker.ingestion"
+startCommand = "uvicorn core.api:app --host 0.0.0.0 --port $PORT"
