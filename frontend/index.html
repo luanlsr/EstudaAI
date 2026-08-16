@@ -791,8 +791,8 @@
             <p>Faça login para acessar o Tutor CEFS e gerar Simulados</p>
             
             <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
-                <input type="email" id="loginEmail" class="auth-input" placeholder="Seu email" required>
-                <input type="password" id="loginPassword" class="auth-input" placeholder="Sua senha" required>
+                <input type="email" id="loginEmail" class="auth-input" placeholder="Seu email">
+                <input type="password" id="loginPassword" class="auth-input" placeholder="Sua senha">
                 <button type="submit" class="btn-primary" id="loginBtn">Entrar</button>
             </form>
             
@@ -813,9 +813,9 @@
             <p>Junte-se à plataforma de estudos CEFS</p>
             
             <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
-                <input type="text" id="regName" class="auth-input" placeholder="Seu nome completo" required>
-                <input type="email" id="regEmail" class="auth-input" placeholder="Seu email" required>
-                <input type="password" id="regPassword" class="auth-input" placeholder="Sua senha" required>
+                <input type="text" id="regName" class="auth-input" placeholder="Seu nome completo">
+                <input type="email" id="regEmail" class="auth-input" placeholder="Seu email">
+                <input type="password" id="regPassword" class="auth-input" placeholder="Sua senha">
                 <button type="submit" class="btn-primary" id="regBtn">Criar Conta</button>
             </form>
             
@@ -998,8 +998,18 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if(!email || !email.includes('@')) {
+                Swal.fire('Atenção', 'Por favor, insira um email válido.', 'warning');
+                return;
+            }
+            if(!password || password.length < 6) {
+                Swal.fire('Atenção', 'Sua senha deve ter pelo menos 6 caracteres.', 'warning');
+                return;
+            }
+            
             const btn = document.getElementById('loginBtn');
             btn.disabled = true; btn.textContent = 'Entrando...';
             try {
@@ -1015,9 +1025,23 @@
 
         async function handleRegister(e) {
             e.preventDefault();
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            
+            if(!name || name.length < 3) {
+                Swal.fire('Atenção', 'Por favor, insira seu nome (mínimo de 3 letras).', 'warning');
+                return;
+            }
+            if(!email || !email.includes('@')) {
+                Swal.fire('Atenção', 'Por favor, insira um email válido.', 'warning');
+                return;
+            }
+            if(!password || password.length < 6) {
+                Swal.fire('Atenção', 'A senha deve ter no mínimo 6 caracteres para sua segurança.', 'warning');
+                return;
+            }
+            
             const btn = document.getElementById('regBtn');
             btn.disabled = true; btn.textContent = 'Criando...';
             try {
