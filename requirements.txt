@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+alembic
+pgvector
+psycopg2-binary
+pymupdf
+langchain
+langchain-core
+langgraph
+langchain-text-splitters
+pydantic
+asyncpg
+langchain-openai

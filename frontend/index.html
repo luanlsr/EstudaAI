@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstudaIA - Simulado CEFS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Usando o CDN do Marked.js para renderizar o Markdown lindamente -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-sidebar: #ffffff;
+            --bg-chat: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --accent-color: #0f172a;
+            --accent-hover: #1e293b;
+            --border-color: #e5e7eb;
+            --user-msg-bg: #f8fafc;
+            --bot-msg-bg: #ffffff;
+            --item-hover: #f3f4f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 320px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-header p {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .question-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .question-item {
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .question-item:hover {
+            background-color: var(--item-hover);
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+
+        .question-item h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .question-item p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border-radius: 12px;
+            background: #eef2ff;
+            color: #4f46e5;
+            margin-bottom: 8px;
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-body);
+            position: relative;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 20px 24px;
+            border-radius: 12px;
+            font-size: 0.9375rem;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            line-height: 1.6;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: var(--bot-msg-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Markdown Styles inside bot message */
+        .message.bot {
+            color: #374151;
+        }
+        .message.bot strong { 
+            color: #111827; 
+            font-weight: 700; 
+        }
+        .message.bot h3 {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* O primeiro H3 (✅ Resposta) */
+        .message.bot h3:nth-of-type(1) { 
+            margin-top: 0; 
+            color: #059669; /* Verde esmeralda */
+        }
+        
+        /* O segundo H3 (🧠 Justificativa) */
+        .message.bot h3:nth-of-type(2) { 
+            color: #2563eb; /* Azul royal */
+        }
+        
+        /* O terceiro H3 (📚 Fonte Oficial) */
+        .message.bot h3:nth-of-type(3) { 
+            color: #9333ea; /* Roxo vibrante */
+        }
+
+        .message.bot p { margin-bottom: 12px; }
+        .message.bot p:last-child { margin-bottom: 0; }
+        
+        .message.bot em {
+            background-color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-style: normal;
+            font-size: 0.85rem;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        .input-wrapper {
+            background-color: var(--bg-body);
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .input-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        textarea {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            font-size: 0.9375rem;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            background: transparent;
+            max-height: 150px;
+            min-height: 48px;
+        }
+
+        button.send-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button.send-btn:hover:not(:disabled) {
+            background-color: var(--accent-hover);
+        }
+
+        button.send-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        button.send-btn:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 16px 24px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-style: italic;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            animation: blink 1.4s infinite both;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            20% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 250px; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .message { max-width: 95%; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Caderno de Prova</h2>
+            <p>Clique em uma questão para enviar ao assistente</p>
+        </div>
+        <div class="question-list" id="question-list">
+            <!-- Questions injected via JS -->
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="chat-container" id="chat">
+            <div class="chat-wrapper" id="chat-wrapper">
+                <div class="message bot">
+                    <p><strong>Olá! Sou seu tutor do CEFS 2026.</strong></p>
+                    <p>Estou conectado à apostila oficial e à legislação. Selecione uma das questões ao lado ou digite sua própria dúvida/simulado abaixo.</p>
+                </div>
+            </div>
+            <div class="chat-wrapper">
+                <div class="typing-indicator" id="typing">
+                    Consultando a base de dados oficial<span>.</span><span>.</span><span>.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-wrapper">
+            <form class="input-container" id="form">
+                <textarea id="query" rows="1" placeholder="Cole sua questão aqui (com as alternativas)..." required></textarea>
+                <button type="submit" class="send-btn" id="submitBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // Banco de questões hardcoded baseado no test_questions.md gerado
+        const questions = [
+            {
+                type: "Múltipla Escolha",
+                title: "1. Modalidade do CEFS",
+                text: "Segundo o texto de apresentação do CEFS (Legislação Processual Penal Militar), o Curso Especial de Formação de Sargentos é realizado preferencialmente em qual formato?\nA) Apenas presencialmente, exigindo dedicação exclusiva no quartel.\nB) Na modalidade de ensino a distância, oferecendo flexibilidade ao Sgt PM.\nC) Através de seminários quinzenais obrigatórios.\nD) Por meio de intercâmbio com outras forças policiais."
+            },
+            {
+                type: "Múltipla Escolha",
+                title: "2. Regra de Continência",
+                text: "De acordo com o Art. 52 do regulamento, no período compreendido entre o arriar da Bandeira e o toque de alvorada no dia seguinte, a tropa deve prestar continência a quais elementos?\nA) Apenas aos oficiais generais e comandantes de batalhão.\nB) A ninguém, pois o expediente encontra-se encerrado.\nC) Apenas à Bandeira Nacional e ao Hino Nacional.\nD) À Bandeira Nacional, Hino Nacional, Presidente da República, bandeiras/hinos de outras nações e a outra tropa."
+            },
+            {
+                type: "Múltipla Escolha",
+                title: "3. Formações Emassadas",
+                text: "Nas formações emassadas de batalhão e de companhia (Art. 270, § 2º), como é dado o comando de execução da continência ('Olhar à Direita/Esquerda')?\nA) Pelo oficial de dia através de rádio.\nB) Por sinais luminosos coordenados pela guarda.\nC) Somente por toque de corneta ou à viva voz dos respectivos comandantes.\nD) Pelos comandantes de pelotão de forma independente."
+            },
+            {
+                type: "Questão Direta",
+                title: "4. Exceção à Regra",
+                text: "Qual é a exceção prevista no parágrafo único do Art. 52 sobre as regras de prestar continência? Quem está isento da regra geral e a quem eles prestam continência?"
+            },
+            {
+                type: "Questão Direta",
+                title: "5. Sentinela",
+                text: "De acordo com o Art. 80, quais são os procedimentos exatos que uma sentinela deve adotar para prestar continência a uma tropa comandada por um oficial que passe a dez passos de distância?"
+            },
+            {
+                type: "Verdadeiro ou Falso",
+                title: "6. Julgamento da Continência",
+                text: "( ) V ou F: À passagem de outra tropa, a tropa que está em forma e parada deve se voltar para ela e tomar a posição de descansar.\n\nJulgue o item acima justificando com a documentação oficial."
+            }
+        ];
+
+        // Render Sidebar
+        const questionListEl = document.getElementById('question-list');
+        const inputEl = document.getElementById('query');
+        
+        questions.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'question-item';
+            div.innerHTML = `
+                <span class="badge">${q.type}</span>
+                <h3>${q.title}</h3>
+                <p>${q.text}</p>
+            `;
+            div.onclick = () => {
+                inputEl.value = q.text;
+                inputEl.focus();
+                adjustTextareaHeight();
+            };
+            questionListEl.appendChild(div);
+        });
+
+        // Auto-resize textarea
+        function adjustTextareaHeight() {
+            inputEl.style.height = 'auto';
+            inputEl.style.height = (inputEl.scrollHeight) + 'px';
+        }
+        inputEl.addEventListener('input', adjustTextareaHeight);
+
+        // Chat Logic
+        const form = document.getElementById('form');
+        const chatWrapper = document.getElementById('chat-wrapper');
+        const chatContainer = document.getElementById('chat');
+        const submitBtn = document.getElementById('submitBtn');
+        const typingIndicator = document.getElementById('typing');
+
+        function addMessage(text, isUser = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            if (isUser) {
+                // Preservar quebras de linha para usuário
+                msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+            } else {
+                // Usar Marked.js para formatar a resposta do agente (negritos, listas)
+                msgDiv.innerHTML = marked.parse(text);
+            }
+
+            chatWrapper.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        inputEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if(inputEl.value.trim() !== '') form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            addMessage(text, true);
+            inputEl.value = '';
+            inputEl.style.height = 'auto';
+            submitBtn.disabled = true;
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: text, top_k: 5 })
+                });
+
+                if (!response.ok) throw new Error('Erro na API');
+                
+                const data = await response.json();
+                
+                if (data && data.answer) {
+                    addMessage(data.answer, false);
+                } else {
+                    addMessage("Não foi possível gerar uma resposta no momento.", false);
+                }
+                
+            } catch (error) {
+                addMessage("Houve um erro de conexão. Tente novamente.", false);
+            } finally {
+                submitBtn.disabled = false;
+                typingIndicator.style.display = 'none';
+                scrollToBottom();
+            }
+        });
+    </script>
+</body>
+</html>
